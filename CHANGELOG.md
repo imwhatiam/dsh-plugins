@@ -1,9 +1,21 @@
 # Changelog
 
-> 版本规则：插件版本与**最近一次验证通过的 DeepSeek Harness 版本**保持一致。当前对齐 `0.2.1`（实测 rc.3 与 rc.5）。
-> 同一 Harness 版本下的插件自身改动，用「对齐版本 + `-<变更标签>`」表示（如 `0.2.1-zoom`；`0.2.1` 是 npm 上的发布版），标签写明这次改了什么；一旦换到新的 Harness 版本验证通过，版本号立即改成该 Harness 版本。
+> 版本规则：插件版本按 npm 语义独立递增，**不再与 DeepSeek Harness 版本号对齐**。
+> 兼容性分两处表达：`package.json` 的 `engines.dsh` 给机器可读的范围，README「安装」一节给「插件版本 ↔ 实测 Harness 版本」对照表；每次在真实 Harness 上验证后更新这两处。
+> `0.2.1` 及各 `0.2.1-<标签>` 是改规则前的历史版本，保留用于追溯。
 
-## 0.2.1-harden
+## 1.0.0
+
+首个稳定版，也是 npm 上第一次发布的完整版本（`0.2.1` 之后的所有改动都在这里）。
+
+- 版本规则变更：不再与 DeepSeek Harness 版本号对齐。此前用 `0.2.1-<标签>` 表示「对齐 0.2.1 的本地改动」，但这类版本在 semver 里是**预发布**（`0.2.1-harden < 0.2.1`），既不会被 `npm i` 选中，发布时还必须显式 `--tag`。兼容范围改由 `engines.dsh` 与 README 的对照表表达。
+- 发布自动化：新增 tag 触发的发布工作流（`.github/workflows/release.yml`），使用 npm trusted publishing（OIDC，无需长期 token），并在发布前校验 tag 与 `package.json` 版本一致、该版本尚未发布。
+
+### 功能（此前未发布）
+
+- 示意图与图表支持缩放/平移：`−`/`+`/`⟲`/`⤢`、拖动平移、`Ctrl/⌘ + 滚轮`、双击复位、键盘 `+`/`-`/`0`；示意图按原始尺寸渲染，超出部分裁切可拖动。
+
+### 安全与状态修正
 
 - Widget 沙箱重建：整份文档（`doctype`/`html`/`head`/`body`）由宿主统一生成，模型内容只投放到宿主给出的 head/body 槽位，CSP 因此永远排在模型脚本之前。此前完整 HTML 文档走 `<\/head>` 前插入，模型写在 `<head>` 里的 `<script>` 会在 CSP 生效前执行；模型自带的 CSP `<meta>` 与 `<base>` 一并剥离。
 - Widget 动作校验补上父窗口一侧：nonce 写在 Widget 自己的文档里，模型代码能读出来直接 `postMessage` 伪造，所以除 iframe 内的判断之外，父页面独立校验自己文档的 `navigator.userActivation`；iframe 内的判断同时改为 fail-closed。额度从「每个 Widget 一份」改为**整个会话共享**，payload 上限按 UTF-8 **字节**（16 KB）而不是字符数计算。
