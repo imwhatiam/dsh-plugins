@@ -73,7 +73,15 @@ test('the client owns no theme state, no invented route, and no extra root per b
   // user-activation state, and the parent caps frequency and payload size.
   assert.match(source, /userActivation/)
   assert.match(source, /WIDGET_ACTIONS_PER_WINDOW = \d+/)
-  assert.match(source, /WIDGET_ACTION_MAX_CHARS = \d+/)
+  // The cap is bytes, not characters, so a multi-byte payload cannot outgrow it.
+  assert.match(source, /WIDGET_ACTION_MAX_BYTES = 16 \* 1024/)
+  assert.match(source, /new TextEncoder\(\)\.encode\(serialized\)\.byteLength/)
+  // The parent re-checks the gesture: the widget can read its own nonce and forge a
+  // message, so the iframe-side check alone proves nothing.
+  assert.match(source, /function hasUserGesture\(\)/)
+  assert.match(source, /policy !== 'programmatic' && !hasUserGesture\(\)/)
+  // One allowance for the whole session, not a fresh one per rendered widget.
+  assert.match(source, /let widgetActionTimes = \[\]/)
   assert.match(source, /MERMAID_ROUTE = '\/dsh-mosaic\/assets\/mermaid\.min\.js'/)
   // The bundled engine is the official build; our own code must stay out of it and
   // the SVG must pass our gate before it reaches the DOM.

@@ -7,6 +7,7 @@ import {
   createPromptController,
   parsePromptBody,
   crossSiteError,
+  foreignHostError,
   readPromptFile,
   requestPolicyError,
   writeStoredPrompt,
@@ -186,7 +187,7 @@ test('GET returns the snapshot and POST enforces the policy', async () => {
   await instance.handle(request({}, 'PUT'), wrong)
   assert.equal(wrong.statusCode, 405)
 
-  const invalidJson = { method: 'POST', headers: { host: 'h', 'content-type': 'application/json' }, async *[Symbol.asyncIterator]() { yield Buffer.from('{oops') } }
+  const invalidJson = { method: 'POST', headers: { host: '127.0.0.1:55467', 'content-type': 'application/json' }, async *[Symbol.asyncIterator]() { yield Buffer.from('{oops') } }
   const bad = response()
   await instance.handle(invalidJson, bad)
   assert.equal(bad.statusCode, 400)
@@ -313,4 +314,73 @@ test('a failed publish leaves the previous file intact', async () => {
   assert.equal(result.persisted, false)
   assert.ok(result.reason)
   assert.equal((await readPromptFile(path)).prompt, 'keep me')
+})
+
+test('a rebound authority is refused even when Origin and Host agree', () => {
+  // DNS rebinding: evil.example resolves to this listener, so the browser fills every
+  // header consistently and only the authority itself can reveal the request is foreign.
+  const rebound = request({
+    host: 'evil.example:55467',
+    origin: 'http://evil.example:55467',
+    'sec-fetch-site': 'same-origin',
+    'content-type': 'application/json',
+  })
+  assert.equal(crossSiteError(rebound), 'foreign_host')
+  assert.equal(requestPolicyError(rebound), 'foreign_host')
+  // Loopback, the listener's own bind address and a declared host are ours.
+  assert.equal(foreignHostError(request()), undefined)
+  assert.equal(foreignHostError(request({ host: '127.0.0.1:55467' })), undefined)
+  assert.equal(foreignHostError(request({ host: '[::1]:55467' })), undefined)
+  assert.equal(foreignHostError(request({ host: 'localhost:55467' })), undefined)
+  assert.equal(foreignHostError(request({ host: '192.168.1.9:55467' }), { bindHost: '192.168.1.9' }), undefined)
+  assert.equal(foreignHostError(request({ host: 'harness.lan:55467' }), { trustedHosts: ['harness.lan'] }), undefined)
+  assert.equal(foreignHostError(request({ host: 'harness.lan:55467' }), { trustedHosts: ['harness.lan:8080'] }), 'foreign_host')
+  assert.equal(foreignHostError(request({ host: 'other.lan:55467' }), { bindHost: '192.168.1.9' }), 'foreign_host')
+  assert.equal(foreignHostError({ headers: {} }), 'invalid_host')
+})
+
+test('a reset that lands during hydrate is not overwritten by the old file', async () => {
+  const dir = await workdir()
+  const path = join(dir, 'prompt.json')
+  await writeStoredPrompt(path, 'OLD SAVED PROMPT')
+  const { instance, sections } = controller({ path })
+  instance.start()
+  // Start the read, then let the user reset before it resolves.
+  const hydrating = instance.hydrate()
+  const reset = await instance.update({ reset: true })
+  assert.equal(reset.status, 200)
+  await hydrating
+  assert.equal(instance.snapshot().prompt, BUILTIN, 'the built-in text stays in force')
+  assert.equal(instance.snapshot().source, 'builtin')
+  assert.deepEqual(sections, [BUILTIN], 'only the reset registration survived')
+  assert.equal((await readPromptFile(path)).prompt, undefined, 'the file stays cleared')
+})
+
+test('a save that names a stale revision is refused instead of overwriting', async () => {
+  const dir = await workdir()
+  const path = join(dir, 'prompt.json')
+  const { instance } = controller({ path })
+  instance.start()
+  const opened = instance.snapshot()
+  assert.equal(instance.snapshot().revision, 0)
+
+  const first = await instance.update({ prompt: 'tab A', expectedRevision: opened.revision })
+  assert.equal(first.status, 200)
+  const afterFirst = first.body.revision
+  assert.ok(afterFirst > opened.revision)
+
+  // Tab B still holds the revision it read before tab A saved.
+  const stale = await instance.update({ prompt: 'tab B', expectedRevision: opened.revision })
+  assert.equal(stale.status, 409)
+  assert.equal(stale.body.error, 'revision_conflict')
+  assert.equal(stale.body.prompt, 'tab A', 'the conflict answer carries the current text')
+  assert.equal(instance.snapshot().prompt, 'tab A', 'the losing write changed nothing')
+
+  const retried = await instance.update({ prompt: 'tab B', expectedRevision: afterFirst })
+  assert.equal(retried.status, 200)
+  assert.equal(instance.snapshot().prompt, 'tab B')
+
+  // A client that names no revision keeps the old last-write-wins behaviour.
+  const anonymous = await instance.update({ prompt: 'tab C' })
+  assert.equal(anonymous.status, 200)
 })

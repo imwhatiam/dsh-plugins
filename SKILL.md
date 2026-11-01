@@ -122,7 +122,7 @@ A widget is for content the fixed components cannot express: a game, a physics/m
 - CSP: no network; inline scripts/styles and `data:`/`blob:` images or media only
 - no access to the host page, cookies, or local storage
 
-`window.mosaic.action(name, payload)` reaches the model only after a real user gesture inside the widget; set `actions: "programmatic"` when the widget must submit on its own (still capped at 10 calls a minute and 16 KB per payload).
+`window.mosaic.action(name, payload)` reaches the model only after a real user gesture; the Host re-checks that gesture, because a widget can read the message nonce out of its own document. Set `actions: "programmatic"` when the widget must submit on its own. Either way the whole session shares a budget of 10 actions a minute and 16 KB per payload, so a widget cannot reset it by re-rendering.
 
 Inside the widget:
 

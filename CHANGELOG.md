@@ -3,6 +3,16 @@
 > 版本规则：插件版本与**最近一次验证通过的 DeepSeek Harness 版本**保持一致。当前对齐 `0.2.1`（实测 rc.3 与 rc.5）。
 > 同一 Harness 版本下的插件自身改动，用「对齐版本 + `-<变更标签>`」表示（如 `0.2.1-zoom`；`0.2.1` 是 npm 上的发布版），标签写明这次改了什么；一旦换到新的 Harness 版本验证通过，版本号立即改成该 Harness 版本。
 
+## 0.2.1-harden
+
+- Widget 沙箱重建：整份文档（`doctype`/`html`/`head`/`body`）由宿主统一生成，模型内容只投放到宿主给出的 head/body 槽位，CSP 因此永远排在模型脚本之前。此前完整 HTML 文档走 `<\/head>` 前插入，模型写在 `<head>` 里的 `<script>` 会在 CSP 生效前执行；模型自带的 CSP `<meta>` 与 `<base>` 一并剥离。
+- Widget 动作校验补上父窗口一侧：nonce 写在 Widget 自己的文档里，模型代码能读出来直接 `postMessage` 伪造，所以除 iframe 内的判断之外，父页面独立校验自己文档的 `navigator.userActivation`；iframe 内的判断同时改为 fail-closed。额度从「每个 Widget 一份」改为**整个会话共享**，payload 上限按 UTF-8 **字节**（16 KB）而不是字符数计算。
+- 自有路由增加 Host 权威校验：`/dsh-mosaic/prompt` 与 `/dsh-mosaic/log` 只接受 loopback、监听地址或 `config.trustedHosts` 声明的授权。仅比较 Origin 与 Host 挡不住 DNS rebinding——被 rebinding 的请求两者都等于攻击者域名。
+- Prompt 状态：`reset` 不再被迟到的 `hydrate` 覆盖（用独立标志区分「还没读过」和「用户刚清空」）；`GET` 返回 `revision`，`POST` 可带 `expectedRevision`，对不上返回 409 并附当前内容，跨浏览器编辑不再静默覆盖。
+- 日志路由在 `flush` 之后才回 204，204 变成真正的落盘回执；测试改为等待具体事件而不是「目录里有任意 jsonl」，修掉那条在 CI 上必然失败的竞态。
+- 缩放/平移：触屏改为 `touch-action: pan-y`，手指上下划可以继续滚动聊天页面；ResizeObserver 里不再在 `setZoom` 的 updater 内调用 `setOverflowing`，两个更新都在回调顶层发出。
+- 测试：新增 `test/client.test.mjs`（Widget 文档构造：CSP 顺序、外壳唯一性、剥离模型 CSP/base、bridge 策略），以及 Host 权威、reset/hydrate 竞态、revision 冲突的回归用例。`npm test` 现为 78 项。
+
 ## 0.2.1-zoom
 
 - 示意图与图表可以缩放和拖动：右上角 `−`/`+`/`⟲`/`⤢`，视图内按住拖动平移，`Ctrl/⌘ + 滚轮`缩放，双击或 `⟲` 复位，键盘 `+`/`-`/`0` 同样可用；`⤢` 在遮罩层里打开更大的画布。

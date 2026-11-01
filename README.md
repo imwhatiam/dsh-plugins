@@ -39,7 +39,7 @@ Mosaic 是一个轻量的 DeepSeek Harness 可视化回答插件。它把模型�
 
 插件向模型贡献一段说明可视化能力的 Prompt，默认是包内文本。
 
-**Settings → Mosaic** 就是这段文本的编辑页：打开即显示当前生效的内容（默认就是内置文案），可以直接改、点「保存」，随时点「恢复默认」回到插件自带文案。保存后从下一轮模型请求开始生效，所有浏览器看到的是同一份，重启也在。
+**Settings → Mosaic** 就是这段文本的编辑页：打开即显示当前生效的内容（默认就是内置文案），可以直接改、点「保存」，随时点「恢复默认」回到插件自带文案。保存后从下一轮模型请求开始生效，所有浏览器看到的是同一份，重启也在。两个浏览器同时编辑时，后保存的那个会收到「已在别处被修改」，页面载入最新内容而不覆盖别人的修改。
 
 生效顺序是「你保存的覆盖 > 配置文件里的 `config.prompt` > 内置文本」。想在 profile 里批量固定一份基线，仍然可以在 `cordis.patch.yml` 给 mosaic 行加 `config.prompt`；留空、类型不对或超过 128 KB 会回落。
 
@@ -71,7 +71,7 @@ $DSH_HOME/logs/dsh-mosaic/YYYY-MM-DD.jsonl   # 未设置 DSH_HOME 时是 ~/.dsh/
 - 记录什么：激活/停用、Prompt 的读取与保存（来源、字符数、是否落盘）、工具执行（名称、结果状态、耗时）、路由请求（方法、状态码、耗时）、技能被读取、以及浏览器侧上报的失败（`client.` 前缀：围栏解析失败、Mermaid 失败、Prompt 读写失败、Widget 动作被限流/超限丢弃）。
 - 不记录什么：Prompt 正文、组件 JSON、任何文本字段的内容。字段名为 `prompt`/`text`/`code`/`content`/`secret`/`token`/`password`/`apiKey` 时只写字符数；其它字符串超过 300 字符会被截断。
 - 体积：单文件超过 2 MB 滚动为 `<日期>.1.jsonl`；超过 7 天的文件在下次启动时删除；文件权限 `0600`。写不进去时不会影响插件，只在宿主日志里告警一次。
-- 浏览器侧的失败通过同源 `POST /dsh-mosaic/log` 上报（请求体上限 4 KB，跨站 403，客户端每分钟最多 20 条）。
+- 浏览器侧的失败通过同源 `POST /dsh-mosaic/log` 上报（请求体上限 4 KB，非本机权威或跨站一律 403，客户端每分钟最多 20 条）；接口在日志落盘之后才回 204，看到成功就是真的写进去了。
 - 默认级别 `info`；想要更细可以给 mosaic 行加 `config.logLevel: debug`（或 `warn` 减少噪音）。
 
 排查示例：
@@ -87,16 +87,17 @@ grep -c '"event":"tool.failed"' "$DSH_HOME"/logs/dsh-mosaic/*.jsonl
 
 ## 已知边界
 
-- 版本号跟随「最近一次验证通过的 DeepSeek Harness 版本」：对齐 `0.2.1`（实测 rc.3、rc.5），本机改动带变更标签（当前 `0.2.1-zoom`）。换到新 Harness 版本验证后再把版本号对齐过去。
+- 版本号跟随「最近一次验证通过的 DeepSeek Harness 版本」：对齐 `0.2.1`（实测 rc.3、rc.5），本机改动带变更标签（当前 `0.2.1-harden`）。换到新 Harness 版本验证后再把版本号对齐过去。
 - 围栏渲染靠扫描页面里的代码块实现：0.2.1 全系列（实测 rc.3 与 rc.5，master 同样）都没有给插件开放「渲染 fenced code block」的扩展点。工具通道 `render_view` + `tool.call.toolview` 是原生做法，围栏是它的补充。
 - 从 0.2.1 起代码块由 Shiki 渲染，`<code>` 上**没有** `language-*` 类；识别靠「代码块位于 assistant 行内 + 正文能解析成合法视图 spec」这条路径，用户消息、工具结果、推理块里的代码块都被排除。
-- `diagram` 与 `chart` 自带缩放/平移：卡片右上角有 `−`/`+`/`⟲`/`⤢`，放大后按住图面拖动即可平移，`Ctrl/⌘ + 滚轮`缩放，双击复位；示意图按原始尺寸渲染，不会被压缩到卡片宽度。
-- `widget` 里调用 `window.mosaic.action()` 只有**真实用户手势**之后才会把动作发回模型（用浏览器的 `navigator.userActivation` 判断，Widget 自己伪造不了）；确实需要自行提交的 Widget 要在节点上写 `actions: "programmatic"`，并且仍受「每分钟 10 次、单次 16 KB」的限制。
+- `diagram` 与 `chart` 自带缩放/平移：卡片右上角有 `−`/`+`/`⟲`/`⤢`，放大后按住图面拖动即可平移，`Ctrl/⌘ + 滚轮`缩放，双击复位；示意图按原始尺寸渲染，不会被压缩到卡片宽度。触屏上图表区域只拦横向拖动（`touch-action: pan-y`），手指上下划仍然滚动聊天页面。
+- `widget` 里调用 `window.mosaic.action()` 只有**真实用户手势**之后才会把动作发回模型：Widget 自己也在判断 `navigator.userActivation`，但决定权在宿主——消息的 nonce 就写在 Widget 自己的文档里，模型代码能读出来直接伪造，所以父页面独立再校验一次自己文档的激活状态。确实需要自行提交的 Widget 要在节点上写 `actions: "programmatic"`；无论哪种，整个会话共享「每分钟 10 次、单次 payload 16 KB（按 UTF-8 字节算）」的额度，新开一个 Widget 不会重置。浏览器若不提供 `navigator.userActivation`，非 `programmatic` 的 Widget 会被按「没有手势」处理，按钮不会回模型。
 - `widget` 是 iframe，拿不到宿主的 `ctx.locale`，因此内部文案由调用方自己写；主题靠宿主令牌值传入。围栏是独立的 React root，切换外观不会触发它重渲染，所以 widget 会观察 `body[data-ds-dark-theme]` 这一个外观属性并在变化时重发令牌——这是插件唯一读取的宿主属性。
 - Mermaid 资产走包内私有路由 `/dsh-mosaic/assets`；没有 Web 服务时 diagram 回落到内置 SVG 布局。
+- 自有路由（`/prompt`、`/log`）先验 **Host 必须是本机权威**（loopback、监听地址，或 `config.trustedHosts` 里声明的），再验 `Sec-Fetch-Site` 与 `Origin`。只比 Origin 和 Host 挡不住 DNS rebinding：被 rebinding 的页面这两者都等于攻击者域名，看起来完全同源。宿主把 Web 服务绑到非 loopback 地址时，请把对应主机名写进 `config.trustedHosts`，否则这些路由会拒绝请求。
 - bundle patch 只插入 Mosaic 自己这一行，不改动任何其他插件。若你还装了别的围栏类插件，两者可以对同一段围栏各显一套，按需在 profile 里关掉其中一个即可。
 - 持久化只用「Host 数据目录里的一个 JSON 文件」，没有走 DSH 的 storageDomain。实测（rc.5）：`storageDomain` 可用，但记录校验只在**重新打开**时执行（`put` 不校验）；`single` 布局遇到版本变化会直接拒绝打开，`compatibleVersions` 也不适用。对一份 Prompt 来说这些能力换不来收益，反而多一个依赖和三条失败分支。
-- Prompt 编辑页是对平台形态的**补充，不是平台标准做法**。DSH 把 Prompt 视为 composition 配置（system-prompt 的 README 明确写着没有终端用户编辑 Prompt 的 API），标准平面是 `Config` + `cordis.patch.yml`，客户端改值应走 `@Remote`，插件自有数据应走存储服务。这里为了「只装一个包、不引入 peer 依赖」，写入用了自建的同源校验路由、持久化用了自建的 `mosaic/prompt.json`。将来宿主提供多行配置表单或标准 Remote 时，这块应当迁移过去。
+- Prompt 编辑页是对平台形态的**补充，不是平台标准做法**。DSH 把 Prompt 视为 composition 配置（system-prompt 的 README 明确写着没有终端用户编辑 Prompt 的 API），标准平面是 `Config` + `cordis.patch.yml`，客户端改值应走 `@Remote`，插件自有数据应走存储服务。这里为了「只装一个包、不引入 peer 依赖」，写入用了自建路由（Host 权威校验 + 同源校验）、持久化用了自建的 `mosaic/prompt.json`。将来宿主提供多行配置表单或标准 Remote 时，这块应当迁移过去。
 
 ## 本地优先
 

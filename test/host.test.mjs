@@ -111,10 +111,28 @@ test('the prompt route publishes the asset URL the client should use', async () 
     setHeader(name, value) { this.headers[name] = value },
     end(body) { this.body = body ?? '' },
   }
-  await route.handler({ method: 'GET', headers: {} }, res)
+  await route.handler({ method: 'GET', headers: { host: '127.0.0.1:55467' } }, res)
   const data = JSON.parse(res.body)
   assert.equal(data.assets.mermaid, '/dsh-mosaic/assets/mermaid.min.js?v=12.2.0')
   assert.equal(data.source, 'builtin')
+})
+
+test('the prompt route refuses a request that names a foreign authority', async () => {
+  const ctx = createContext()
+  apply(ctx, {})
+  const route = ctx.state.routes.find((entry) => entry.path === '/dsh-mosaic/prompt')
+  const res = {
+    statusCode: 0,
+    headers: {},
+    setHeader(name, value) { this.headers[name] = value },
+    end(body) { this.body = body ?? '' },
+  }
+  await route.handler({
+    method: 'GET',
+    headers: { host: 'evil.example:55467', origin: 'http://evil.example:55467', 'sec-fetch-site': 'same-origin' },
+  }, res)
+  assert.equal(res.statusCode, 403)
+  assert.equal(JSON.parse(res.body).error, 'foreign_host')
 })
 
 test('activating with no config contributes the built-in prompt at an external order', () => {
@@ -156,6 +174,29 @@ test('activation serves plugin assets, the prompt route and the log sink', () =>
   }
 })
 
+/**
+ * Every line this plugin has written for the current run, once `pattern` appears.
+ *
+ * @param {string} dir - the log directory.
+ * @param {RegExp} pattern - the line to wait for.
+ * @returns {Promise<string>} the accumulated log text.
+ */
+async function logTextUntil(dir, pattern) {
+  const { readdirSync, readFileSync } = await import('node:fs')
+  let text = ''
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    try {
+      const files = readdirSync(dir).filter((name) => name.endsWith('.jsonl'))
+      text = files.map((name) => readFileSync(join(dir, name), 'utf8')).join('')
+    } catch {
+      text = ''
+    }
+    if (pattern.test(text)) return text
+    await new Promise((resolve) => setTimeout(resolve, 25))
+  }
+  return text
+}
+
 test('the client log sink refuses foreign writes and records a bounded event', async () => {
   const ctx = createContext()
   apply(ctx, {})
@@ -181,27 +222,18 @@ test('the client log sink refuses foreign writes and records a bounded event', a
   const ok = response()
   await route.handler(post({ 'content-type': 'application/json' }, JSON.stringify({ level: 'warn', event: 'fence.parse-failed', detail: { chars: 12 } })), ok)
   assert.equal(ok.statusCode, 204)
-  // The sink appends asynchronously; give the queue a moment to reach disk.
-  const { readdirSync, readFileSync } = await import('node:fs')
+  // Wait for the line this test is about. Waiting for "any .jsonl exists" passed on the
+  // first poll, because an earlier activation had already created today's file, and the
+  // assertion below then raced the still-queued write.
   const dir = join(storeHome, 'logs', 'dsh-mosaic')
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 25))
-    if (readdirSync(dir).some((name) => name.endsWith('.jsonl'))) break
-  }
-  const files = readdirSync(dir).filter((name) => name.endsWith('.jsonl'))
-  assert.ok(files.length > 0, 'a log file was created')
-  const text = files.map((name) => readFileSync(join(dir, name), 'utf8')).join('')
+  const text = await logTextUntil(dir, /client\.fence\.parse-failed/)
   assert.match(text, /client\.fence\.parse-failed/)
   // A prompt-like field is reduced to its length, never written out.
   const leaked = response()
   await route.handler(post({ 'content-type': 'application/json' }, JSON.stringify({
     level: 'warn', event: 'probe', detail: { prompt: 'SECRET-MARKER-XYZ', note: 'ok' },
   })), leaked)
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 25))
-    if (readFileSync(join(dir, files[0]), 'utf8').includes('promptChars')) break
-  }
-  const after = files.map((name) => readFileSync(join(dir, name), 'utf8')).join('')
+  const after = await logTextUntil(dir, /"promptChars":\d+/)
   assert.doesNotMatch(after, /SECRET-MARKER/, 'user content never reaches the log')
   assert.match(after, /"promptChars":\d+/)
 })
