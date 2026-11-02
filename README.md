@@ -10,7 +10,7 @@ Superpowers skills for DeepSeek Harness. The exact upstream version and commit a
 
 ## Versioning
 
-The plugin version mirrors the DeepSeek Harness release line it has been validated against. `v0.2.1` is validated on DSH `0.2.1-rc.5`. When a future DSH release is validated, bump the plugin version to that DSH base version.
+`1.0.0` is the first stable release. The plugin now versions on its own line; the DeepSeek Harness range it was validated against lives in `engines.dsh` (`>=0.2.1-rc.5 <0.3.0-0`) and in the `peerDependencies` on `@deepseek-ai/dsh-llm` and `@deepseek-ai/dsh-skill`. Raise that range when a newer DSH release is validated, and bump the major version only when the plugin's own behaviour changes incompatibly.
 
 ## Install
 
@@ -25,7 +25,7 @@ dsh plugin --profile web add <your-package-name>
 ### From GitHub release
 
 ```bash
-dsh plugin --profile web add github:imwhatiam/dsh-superpowers#v0.2.1
+dsh plugin --profile web add github:imwhatiam/dsh-superpowers#v1.0.0
 ```
 
 ### From local development directory (testing only)

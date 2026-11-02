@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.0.0] - 2026-11-02
 
 ### Fixed
 - The bootstrap no longer records a session as injected before the message reaches session history. A first request that fails in `prepareRequest`, or a turn cancelled before the messages were appended, used to lose the bootstrap for the rest of the session without any error; the next step now injects it again.
@@ -10,6 +10,8 @@ All notable changes to this project will be documented in this file.
 - A malformed or unreadable `SKILL.md` now costs one skill instead of the whole catalog. `loadCatalog()` reports the failing directory as `skill:<name>` and keeps loading its siblings; the `catalog` failure is reserved for an unreadable skills directory.
 
 ### Changed
+- The plugin versions on its own line from this release. The validated DeepSeek Harness range stays in
+  `engines.dsh` and the `@deepseek-ai/dsh-*` peer dependencies.
 - The bootstrap message source uses `form: 'instructions'`, one of the documented context forms, instead of the undefined `'bootstrap'`.
 - `insertionIndex()` was removed: `agent/pre-step` receives claimed inbox messages, never a compaction checkpoint, so the index was always `0`. The bootstrap stays after the checkpoint because it is appended to the history that the checkpoint already replaced.
 - `adapter/dsh-tools.md` names the tools that come from optional DSH plugins (jobs, subagent, web) so skills do not assume a profile mounts them.
