@@ -14,7 +14,6 @@ All notable changes to this project will be documented in this file.
 - `insertionIndex()` was removed: `agent/pre-step` receives claimed inbox messages, never a compaction checkpoint, so the index was always `0`. The bootstrap stays after the checkpoint because it is appended to the history that the checkpoint already replaced.
 - `adapter/dsh-tools.md` names the tools that come from optional DSH plugins (jobs, subagent, web) so skills do not assume a profile mounts them.
 - The session-history section now says those tools are opt-in (mounted by the experimental `dsh-experimental-session-search` bundle), lists all five including `session_event_trace`, and points at the persisted log when they are absent. It also separates `subagent` from `subagent_fork`, which is a second instance of the same plugin rather than a variant.
-- README quality gates report the measured result of each gate instead of the stale `15/15` block, and no longer recommend publishing as preview.
 
 ### Added
 - `lib/state.js` loads the catalog and the bootstrap text independently and degrades with a logged warning instead of failing the host when a skill file or an adapter file is unreadable.
@@ -28,7 +27,6 @@ All notable changes to this project will be documented in this file.
 - Loaded on the shipped `headless` profile of DeepSeek Harness 0.2.1-rc.5 through a `--patch` overlay: the bootstrap was injected once (`form: 'instructions'`), stayed single across three turns, the skill catalog served 21 skills, and a real `skill` call returned the skill body with the packaged `resourceBase`.
 - Replayed a real, manually compacted session log read-only: its original bootstrap sat inside the shadowed range, the reconstructed history matched the host's own shadow list, and the predicate returned "inject" straight after the checkpoint and "do not inject" once the bootstrap was back.
 - Re-ran the headless profile after the adapter rewrite: the injected text carries the opt-in wording and all five session tool names, and the catalog still serves all 15 vendored skills.
-- Eleven targeted mutations, including one that drops a session tool from the adapter mapping, are killed by the test suite.
 
 ## [0.2.1] - 2026-10-30
 
@@ -77,5 +75,4 @@ All notable changes to this project will be documented in this file.
 ## Upcoming Features
 - GitHub Actions CI/CD pipeline
 - Automated upstream update detection
-- Full mutation testing coverage
 - Documentation site generation

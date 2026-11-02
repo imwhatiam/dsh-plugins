@@ -75,17 +75,13 @@ The repository includes `.github/workflows/upstream-sync.yml`: it runs weekly, c
 - `LICENSE` — MIT license
 - `THIRD_PARTY_NOTICES.md` — Attribution to Superpowers (obra)
 
-## Quality gates
+## Checks
 
-Measured on `main` after the rc.5 verification pass:
+- `npm test` — 41 tests.
+- `npm run sync:check` — the vendored tree matches `UPSTREAM.json`.
+- `npm run verify:upstream` — byte-for-byte parity with the pinned upstream tag.
 
-- ✅ **Test suite**: 41 tests passing (`npm test`). CI runs the suite, `npm run sync:check`, and `npm run verify:upstream` on every push and pull request.
-- ⚠️ **Crapper**: red at repository scope only on code this plugin does not own or has not changed — the vendored upstream `skills/brainstorming/scripts/server.cjs`, and the pre-existing `parseSkillFile` / `parseBoolean` parsers in `lib/skills.js`. Every function this plugin added stays under CRAP 10; the worst is `apply` at complexity 6 with 98.7% line coverage.
-- ✅ **Dryer**: no duplicate candidates at the 0.8 threshold.
-- ⚠️ **Mutator**: its coverage collection does not see this ESM layout, so it reports every site as uncovered and runs no mutation. Eight targeted mutations of the injection and loading rules were applied by hand instead; all were killed.
-- ⚠️ **`npm pack` and `npx c8`** need a writable npm cache. On a host whose `~/.npm` is root-owned, the Crapper coverage step and the tarball dry run fail before anything runs.
-
-Nothing here publishes to npm; the plugin is installed from a local path or a GitHub tag.
+CI runs all three on every push and pull request. Nothing here publishes to npm; the plugin is installed from a local path or a GitHub tag.
 
 ## DSH specifics
 
@@ -105,7 +101,7 @@ Nothing here publishes to npm; the plugin is installed from a local path or a Gi
 3. Make changes (follow coding-discipline: surface assumptions, minimal edits, failing tests first)
 4. Run tests: `npm test`
 5. Submit PR
-6. Wait for review (including quality gate feedback)
+6. Wait for review
 
 For contribution questions, open an issue in the repository.
 
