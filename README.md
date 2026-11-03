@@ -158,6 +158,8 @@ dsh plugin --profile desktop add link:/absolute/path/to/dsh-mosaic
 
 | 插件版本 | 实测通过的 DeepSeek Harness | 说明 |
 | --- | --- | --- |
+| `1.1.1` | `0.2.1-rc.5` | 运行时代码与 `1.1.0` 相同；仅修正发布工作流的无效输入 |
+| `1.1.0` | `0.2.1-rc.5` | 13 种示意图、PNG/SVG 导出、`warnings=` 可读规模提示、布局修正 |
 | `1.0.0` | `0.2.1-rc.5`（同时复核 rc.3 行为） | 首个稳定版；含 Widget 沙箱、路由权威、Prompt 并发等修正 |
 | `0.2.1` | `0.2.1-rc.3`、`0.2.1-rc.5` | 上一版，npm 上的历史发布 |
 

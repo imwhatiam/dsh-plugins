@@ -4,6 +4,12 @@
 > 兼容性分两处表达：`package.json` 的 `engines.dsh` 给机器可读的范围，README「安装」一节给「插件版本 ↔ 实测 Harness 版本」对照表；每次在真实 Harness 上验证后更新这两处。
 > `0.2.1` 及各 `0.2.1-<标签>` 是改规则前的历史版本，保留用于追溯。
 
+## 1.1.1
+
+发布流程修正，运行时代码与 `1.1.0` 相同。
+
+- `release.yml` 去掉了 `actions/setup-node@v4` 不认识的 `package-manager-cache` 输入。该行此前被忽略，每次发布都会打一条 unexpected-input 警告；缓存本就默认关闭，而这个 job 不安装任何依赖，因此直接删除并注明原因。
+
 ## 1.1.0
 
 ### 示意图
