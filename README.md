@@ -6,8 +6,9 @@ Mosaic 是一个轻量的 DeepSeek Harness 可视化回答插件。它把模型�
 
 它刻意不追求“什么都能画”：
 
-- 主包没有 ECharts / Three.js；flowchart / sequence 用官方 Mermaid 发行包，作为懒加载资产，只在出现 diagram 时下载（原始 5.5 MB，gzip 后约 1.3 MB，带版本号可长期缓存）。
-- 每个 diagram 卡片右上角有 `drawio` 按钮，可导出标准 mxGraph XML，在 draw.io 里继续编辑。
+- 主包没有 ECharts / Three.js；`flowchart`、`sequence`、`state`、`er`、`gantt`、`mindmap` 用官方 Mermaid 发行包，作为懒加载资产，只在出现这几种图时下载（原始 5.5 MB，gzip 后约 1.3 MB，带版本号可长期缓存）。
+- `timeline`、`layers`、`quadrant`、`tree`、`funnel`、`venn`、`swimlane` 由插件自己排布，不依赖图引擎；节点宽度按标签文字估算，不截断成省略号。
+- 每个 diagram 卡片右上角有 `svg` / `png` / `drawio` 三个导出按钮：前两个直接下载图片（颜色、字号按当前主题解析后内联，脱离页面也能看），`drawio` 导出标准 mxGraph XML，在 draw.io 里继续编辑。
 - 组件目录保持精简，字段、校验、提示词来自同一份定义。
 - 普通文件/Office 只给链接，不在聊天里硬解。
 - 交互默认在本地完成；只有声明了 `action` 的组件才回模型。
@@ -56,6 +57,26 @@ Mosaic 是一个轻量的 DeepSeek Harness 可视化回答插件。它把模型�
 - 高级：`widget`
 
 `diff` 带行号和 `-`/`+` gutter，长行自动换行。
+
+`diagram` 支持 13 种图，按“读者要回答的问题”选：
+
+| 读者要看懂 | kind | 建议规模 |
+| --- | --- | --- |
+| 分支、重试、判断 | `flowchart` | 9 节点 / 12 边 |
+| 谁在什么时候说了什么 | `sequence` | 5 条生命线 / 12 条消息 |
+| 时间线上的事件 | `timeline` | 7 项 |
+| 分层结构 | `layers` | 6 层 |
+| 两轴定位（优先级、取舍） | `quadrant` | 12 项 |
+| 父子层级、组织关系 | `tree` | 12 节点 / 4 层 |
+| 逐级流失的转化 | `funnel` | 6 级 |
+| 集合重叠 | `venn` | 3 个集合 |
+| 跨角色的交接 | `swimlane` | 6 步 / 5 条泳道 |
+| 状态与迁移 | `state` | 9 个状态 |
+| 表结构与关系 | `er` | 8 个实体 |
+| 排期 | `gantt` | 12 个任务 |
+| 主题发散 | `mindmap` | 12 个分支 |
+
+`legend: [{label, tone}]` 给颜色加说明：`tone` 表达含义时写，纯装饰时省略。
 
 完整字段见 [`SKILL.md`](./SKILL.md)。
 
@@ -142,9 +163,21 @@ dsh plugin --profile desktop add link:/absolute/path/to/dsh-mosaic
 
 Harness 升级到 `0.3.x` 后，请先在新版本上验证再放宽 `engines.dsh`，并在此表补一行。
 
+## 校验与建议
+
+`validate_view` 和 `render_view` 除了报错，还会返回 `warnings=` 行，指出“能渲染但读起来费劲”的地方，例如：
+
+- 表格超过 8 行、列表超过 7 项、图表超过 12 个点或只有 1 个点；
+- 同一个视图里 `accent` 用在超过 2 个元素上；
+- 卡片嵌套超过 2 层；
+- 某类图超过它自己的可读规模（flowchart 9 节点、sequence 5 条生命线……）；
+- `widget` 里引用了外部 CDN 资源（沙箱没有网络，必定加载失败）。
+
+这些不阻塞渲染，只是给出改法。
+
 ## 限制
 
-- 80 节点、6 层嵌套、表格 40×8、图表 40 点、diagram 12 节点/20 边、widget 代码 20k。
+- 硬上限：80 节点、6 层嵌套、表格 40×8、图表 40 点、diagram 12 节点/20 边、widget 代码 20k。可读规模见上文的表格与 `SKILL.md`。
 - 不读本地文件、不渲染 docx/pptx/xlsx；这些用 `link` 卡片交给宿主打开。
 - 不内置数学公式排版；公式可以放在 `code` 或普通文本里。
 - 围栏渲染依赖 DSH 当前的代码块 DOM；宿主结构变化时可能需要适配。

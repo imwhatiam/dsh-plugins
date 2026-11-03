@@ -92,3 +92,29 @@ test('presenters are pure, provider-neutral and free of product copy', () => {
   assert.doesNotMatch(render.presentCall({}).title, /[一-鿿]/)
   assert.doesNotMatch(validate.presentCall().title, /[一-鿿]/)
 })
+
+test('validate_view reports readable-size warnings for a valid fence', async () => {
+  const rows = Array.from({ length: 12 }, (_, index) => [`r${index}`, index])
+  const value = await validate.execute({
+    spec: JSON.stringify({ items: [{ type: 'table', columns: ['name', 'n'], rows }] }),
+  })
+  assert.equal(value.status, 'valid')
+  assert.equal(value.warnings.length, 1)
+  const text = validate.output.render({}, value)[0].text
+  assert.match(text, /warnings=1\nwarning_1=items\[0\]: 12 rows/)
+})
+
+test('validate_view stays quiet when a valid fence is inside the budgets', async () => {
+  const value = await validate.execute({ spec: '{"items":[{"type":"callout","content":"ok"}]}' })
+  assert.equal(value.warnings, undefined)
+  assert.doesNotMatch(validate.output.render({}, value)[0].text, /warning/)
+})
+
+test('render_view carries the same readable-size warnings', async () => {
+  const rows = Array.from({ length: 12 }, (_, index) => [`r${index}`, index])
+  const value = await render.execute({ spec: { items: [{ type: 'table', columns: ['name', 'n'], rows }] } })
+  assert.equal(value.status, 'rendered')
+  assert.equal(value.warnings.length, 1)
+  const text = render.output.render({}, value)[0].text
+  assert.match(text, /warnings=1\nwarning_1=items\[0\]: 12 rows/)
+})

@@ -131,3 +131,126 @@ test('a widget keeps only the programmatic action opt-in', () => {
   assert.equal(normalizeView({ items: [{ ...base, actions: 'programmatic' }] }).spec.items[0].actions, 'programmatic')
   assert.equal(normalizeView({ items: [{ ...base, actions: 'auto' }] }).spec.items[0].actions, undefined, 'only the documented value survives')
 })
+
+test('accepts the native layout kinds', () => {
+  const quadrant = normalizeView({ items: [{
+    type: 'diagram', kind: 'quadrant',
+    xAxis: ['Low effort', 'High effort'], yAxis: ['Low impact', 'High impact'],
+    quadrants: { tl: 'Do first', br: 'Avoid' },
+    items: [{ label: 'Fix footer', x: 0.2, y: 0.3, tone: 'accent' }],
+  }] })
+  assert.equal(quadrant.errors.length, 0)
+  assert.equal(quadrant.spec.items[0].items[0].x, 0.2)
+
+  const tree = normalizeView({ items: [{ type: 'diagram', kind: 'tree', root: { label: 'Root', children: [{ label: 'Leaf' }] } }] })
+  assert.equal(tree.errors.length, 0)
+  assert.equal(tree.spec.items[0].root.children[0].label, 'Leaf')
+
+  const funnel = normalizeView({ items: [{ type: 'diagram', kind: 'funnel', items: [{ label: 'Visits', value: 100 }, { label: 'Signups', value: 20 }] }] })
+  assert.equal(funnel.errors.length, 0)
+
+  const venn = normalizeView({ items: [{ type: 'diagram', kind: 'venn', sets: [{ label: 'A' }, { label: 'B' }], center: 'both' }] })
+  assert.equal(venn.errors.length, 0)
+  assert.equal(venn.spec.items[0].center, 'both')
+
+  const swimlane = normalizeView({ items: [{
+    type: 'diagram', kind: 'swimlane',
+    lanes: ['Customer', 'Support'],
+    steps: [{ lane: 0, label: 'Report' }, { lane: 1, label: 'Triage' }],
+  }] })
+  assert.equal(swimlane.errors.length, 0)
+  assert.equal(swimlane.spec.items[0].steps[1].lane, 1)
+})
+
+test('accepts the engine-backed kinds', () => {
+  const state = normalizeView({ items: [{
+    type: 'diagram', kind: 'state',
+    nodes: [{ id: 'idle', label: 'Idle' }, { id: 'done', label: 'Done' }],
+    edges: [{ from: 'idle', to: 'done', label: 'finish' }],
+    initial: 'idle', final: ['done'],
+  }] })
+  assert.equal(state.errors.length, 0)
+  assert.equal(state.spec.items[0].initial, 'idle')
+  assert.deepEqual(state.spec.items[0].final, ['done'])
+
+  const er = normalizeView({ items: [{
+    type: 'diagram', kind: 'er',
+    entities: [
+      { name: 'User', fields: [{ name: 'id', type: 'int', key: 'PK' }] },
+      { name: 'Order', fields: [{ name: 'id', type: 'int', key: 'PK' }] },
+    ],
+    relations: [{ from: 'User', to: 'Order', label: 'places', cardinality: 'one-to-many' }],
+  }] })
+  assert.equal(er.errors.length, 0)
+  assert.equal(er.spec.items[0].relations[0].cardinality, 'one-to-many')
+
+  const gantt = normalizeView({ items: [{ type: 'diagram', kind: 'gantt', tasks: [{ name: 'Design', start: '2026-01-01', end: '2026-01-10' }] }] })
+  assert.equal(gantt.errors.length, 0)
+
+  const mindmap = normalizeView({ items: [{ type: 'diagram', kind: 'mindmap', root: { label: 'Root', children: [{ label: 'A' }] } }] })
+  assert.equal(mindmap.errors.length, 0)
+})
+
+test('rejects a tree that is too deep and a point outside the quadrant', () => {
+  const deep = { label: 'l0', children: [{ label: 'l1', children: [{ label: 'l2', children: [{ label: 'l3', children: [{ label: 'l4' }] }] }] }] }
+  const tree = normalizeView({ items: [{ type: 'diagram', kind: 'tree', root: deep }] })
+  assert.equal(tree.spec, null)
+  assert.ok(tree.errors.some((error) => error.includes('depth')))
+
+  const outside = normalizeView({ items: [{ type: 'diagram', kind: 'quadrant', items: [{ label: 'x', x: 1.4, y: 0.2 }] }] })
+  assert.equal(outside.spec, null, 'a clamped point would lie about its position')
+})
+
+test('normalizes a diagram legend and drops unknown tones', () => {
+  const result = normalizeView({ items: [{
+    type: 'diagram', kind: 'layers', legend: [{ label: 'Focal', tone: 'accent' }, { label: 'External', tone: 'neon' }],
+    layers: [{ title: 'UI', items: ['React'] }],
+  }] })
+  assert.equal(result.errors.length, 0)
+  assert.deepEqual(result.spec.items[0].legend, [{ label: 'Focal', tone: 'accent' }, { label: 'External' }])
+})
+
+test('warns when a table is longer than a chat card reads well', () => {
+  const rows = Array.from({ length: 12 }, (_, index) => [`row ${index}`, index])
+  const result = normalizeView({ items: [{ type: 'table', columns: ['name', 'n'], rows }] })
+  assert.equal(result.errors.length, 0)
+  assert.ok(result.warnings.some((warning) => warning.includes('12 rows')))
+})
+
+test('stays quiet for a view inside every budget', () => {
+  const result = normalizeView({ items: [
+    { type: 'table', columns: ['name', 'n'], rows: [['a', 1], ['b', 2]] },
+    { type: 'diagram', kind: 'flowchart', nodes: [{ id: 'a', label: 'A', tone: 'accent' }, { id: 'b', label: 'B' }], edges: [{ from: 'a', to: 'b' }] },
+  ] })
+  assert.equal(result.errors.length, 0)
+  assert.deepEqual(result.warnings, [])
+})
+
+test('warns when more than two elements compete for focal accent', () => {
+  const result = normalizeView({ items: [{
+    type: 'diagram', kind: 'flowchart',
+    nodes: [
+      { id: 'a', label: 'A', tone: 'accent' },
+      { id: 'b', label: 'B', tone: 'accent' },
+      { id: 'c', label: 'C', tone: 'accent' },
+    ],
+  }] })
+  assert.equal(result.errors.length, 0)
+  assert.ok(result.warnings.some((warning) => warning.includes('focal accents')))
+})
+
+test('warns when a diagram is over its readable size', () => {
+  const nodes = Array.from({ length: 11 }, (_, index) => ({ id: `n${index}`, label: `Node ${index}` }))
+  const result = normalizeView({ items: [{ type: 'diagram', kind: 'flowchart', nodes }] })
+  assert.equal(result.errors.length, 0)
+  assert.ok(result.warnings.some((warning) => warning.includes('11 nodes')))
+})
+
+test('warns when a widget asks for an asset the sandbox blocks', () => {
+  const result = normalizeView({ items: [{
+    type: 'widget',
+    code: '<script src="https://cdn.example/chart.js"></script>',
+  }] })
+  assert.equal(result.errors.length, 0)
+  assert.ok(result.warnings.some((warning) => warning.includes('blocks remote assets')))
+})
