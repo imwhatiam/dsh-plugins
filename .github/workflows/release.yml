@@ -31,11 +31,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # No `cache:` on purpose: this job installs nothing (the package has no
+      # dependencies), so a package-manager cache would only add a lookup and a
+      # stale-cache failure mode.
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
-          package-manager-cache: false
 
       # Trusted publishing needs npm >= 11.5.1; fail loudly instead of publishing nothing.
       - name: Check npm CLI supports trusted publishing
