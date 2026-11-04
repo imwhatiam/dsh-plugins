@@ -254,3 +254,24 @@ test('warns when a widget asks for an asset the sandbox blocks', () => {
   assert.equal(result.errors.length, 0)
   assert.ok(result.warnings.some((warning) => warning.includes('blocks remote assets')))
 })
+
+test('warns when a flowchart or sequence exceeds its edge budget', () => {
+  const nodes = Array.from({ length: 4 }, (_, index) => ({ id: `n${index}`, label: `N${index}` }))
+  const edges = Array.from({ length: 14 }, (_, index) => ({ from: 'n0', to: `n${index % 4}` }))
+  const flow = normalizeView({ items: [{ type: 'diagram', kind: 'flowchart', nodes, edges }] })
+  assert.equal(flow.errors.length, 0)
+  assert.ok(flow.warnings.some((warning) => warning.includes('14 edges')))
+
+  const participants = Array.from({ length: 3 }, (_, index) => ({ id: `p${index}`, label: `P${index}` }))
+  const messages = Array.from({ length: 13 }, (_, index) => ({ from: 'p0', to: `p${index % 3}`, label: `m${index}` }))
+  const sequence = normalizeView({ items: [{ type: 'diagram', kind: 'sequence', participants, messages }] })
+  assert.equal(sequence.errors.length, 0)
+  assert.ok(sequence.warnings.some((warning) => warning.includes('13 messages')))
+})
+
+test('a diagram inside both budgets stays quiet', () => {
+  const nodes = Array.from({ length: 4 }, (_, index) => ({ id: `n${index}`, label: `N${index}` }))
+  const edges = Array.from({ length: 6 }, (_, index) => ({ from: 'n0', to: `n${index % 4}` }))
+  const result = normalizeView({ items: [{ type: 'diagram', kind: 'flowchart', nodes, edges }] })
+  assert.deepEqual(result.warnings, [])
+})

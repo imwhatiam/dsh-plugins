@@ -89,7 +89,7 @@ $DSH_HOME/logs/dsh-mosaic/YYYY-MM-DD.jsonl   # 未设置 DSH_HOME 时是 ~/.dsh/
 ```
 
 - 一行一个 JSON 对象，字段固定：`ts`、`level`（debug/info/warn/error）、`event`，其余按事件附带（如 `tool`、`ms`、`status`、`route`、`source`、`reason`）。
-- 记录什么：激活/停用、Prompt 的读取与保存（来源、字符数、是否落盘）、工具执行（名称、结果状态、耗时）、路由请求（方法、状态码、耗时）、技能被读取、以及浏览器侧上报的失败（`client.` 前缀：围栏解析失败、Mermaid 失败、Prompt 读写失败、Widget 动作被限流/超限丢弃）。
+- 记录什么：激活/停用、Prompt 的读取与保存（来源、字符数、是否落盘）、工具执行（名称、结果状态、耗时）、路由请求（方法、状态码、耗时）、技能被读取、以及浏览器侧上报的失败（`client.` 前缀：围栏解析失败、Mermaid 失败、示意图导出失败、Prompt 读写失败、Widget 动作被限流/超限丢弃）。
 - 不记录什么：Prompt 正文、组件 JSON、任何文本字段的内容。字段名为 `prompt`/`text`/`code`/`content`/`secret`/`token`/`password`/`apiKey` 时只写字符数；其它字符串超过 300 字符会被截断。
 - 体积：单文件超过 2 MB 滚动为 `<日期>.1.jsonl`；超过 7 天的文件在下次启动时删除；文件权限 `0600`。写不进去时不会影响插件，只在宿主日志里告警一次。
 - 浏览器侧的失败通过同源 `POST /dsh-mosaic/log` 上报（请求体上限 4 KB，非本机权威或跨站一律 403，客户端每分钟最多 20 条）；接口在日志落盘之后才回 204，看到成功就是真的写进去了。
@@ -108,7 +108,7 @@ grep -c '"event":"tool.failed"' "$DSH_HOME"/logs/dsh-mosaic/*.jsonl
 
 ## 已知边界
 
-- 本插件的 npm 版本独立递增（当前 `1.0.0`），不再与 Harness 版本号对齐；兼容范围由 `package.json` 的 `engines.dsh` 声明，最近一次实测的 Harness 版本见「安装」一节。
+- 本插件的 npm 版本独立递增（当前 `1.1.2`），不再与 Harness 版本号对齐；兼容范围由 `package.json` 的 `engines.dsh` 声明，最近一次实测的 Harness 版本见「安装」一节。
 - 围栏渲染靠扫描页面里的代码块实现：0.2.1 全系列（实测 rc.3 与 rc.5，master 同样）都没有给插件开放「渲染 fenced code block」的扩展点。工具通道 `render_view` + `tool.call.toolview` 是原生做法，围栏是它的补充。
 - 从 0.2.1 起代码块由 Shiki 渲染，`<code>` 上**没有** `language-*` 类；识别靠「代码块位于 assistant 行内 + 正文能解析成合法视图 spec」这条路径，用户消息、工具结果、推理块里的代码块都被排除。
 - `diagram` 与 `chart` 自带缩放/平移：卡片右上角有 `−`/`+`/`⟲`/`⤢`，放大后按住图面拖动即可平移，`Ctrl/⌘ + 滚轮`缩放，双击复位；示意图按原始尺寸渲染，不会被压缩到卡片宽度。触屏上图表区域只拦横向拖动（`touch-action: pan-y`），手指上下划仍然滚动聊天页面。
@@ -154,10 +154,11 @@ dsh plugin --profile desktop add link:/absolute/path/to/dsh-mosaic
 
 安装后重启或刷新 DSH Web，新会话即可使用。bundle patch 只插入本插件一行，不会关闭或覆盖别人的插件。
 
-**兼容性**：npm 版本独立于 DeepSeek Harness 版本，`1.0.x` 对应下方实测的 Harness 范围；声明式范围见 `package.json` 的 `engines.dsh`（当前 `>=0.2.1-rc.1 <0.3.0-0`）。
+**兼容性**：npm 版本独立于 DeepSeek Harness 版本，`1.1.x` 对应下方实测的 Harness 范围；声明式范围见 `package.json` 的 `engines.dsh`（当前 `>=0.2.1-rc.1 <0.3.0-0`）。
 
 | 插件版本 | 实测通过的 DeepSeek Harness | 说明 |
 | --- | --- | --- |
+| `1.1.2` | `0.2.1-rc.5` | 修复示意图标签里的括号/方括号/花括号导致解析失败；补上边与消息的可读预算 |
 | `1.1.1` | `0.2.1-rc.5` | 运行时代码与 `1.1.0` 相同；仅修正发布工作流的无效输入 |
 | `1.1.0` | `0.2.1-rc.5` | 13 种示意图、PNG/SVG 导出、`warnings=` 可读规模提示、布局修正 |
 | `1.0.0` | `0.2.1-rc.5`（同时复核 rc.3 行为） | 首个稳定版；含 Widget 沙箱、路由权威、Prompt 并发等修正 |

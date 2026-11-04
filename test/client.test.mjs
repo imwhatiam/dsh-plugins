@@ -221,3 +221,36 @@ test('the fence parser carries the legend and rejects a point outside the quadra
   assert.equal(view.items[0].items.length, 2, 'the parser clamps rather than dropping, like the rest of the client')
   assert.equal(view.items[0].items[1].x, 1)
 })
+
+test('flowchart labels are quoted, so parentheses and brackets cannot end them', () => {
+  const source = toMermaid({
+    kind: 'flowchart',
+    nodes: [
+      { id: 'a', label: '调用 get_current_lock_id()' },
+      { id: 'b', label: '读缓存里的 WOPI 锁', shape: 'diamond' },
+      { id: 'c', label: 'list[int]', shape: 'round' },
+    ],
+    edges: [{ from: 'a', to: 'b', label: '命中 (cache)' }],
+  })
+  assert.match(source, /n0\["调用 get_current_lock_id\(\)"\]/)
+  assert.match(source, /n1\{"读缓存里的 WOPI 锁"\}/)
+  assert.match(source, /n2\("list\[int\]"\)/)
+  assert.match(source, /n0 -->\|"命中 \(cache\)"\| n1/)
+})
+
+test('a sub-label keeps its line break inside the quoted label', () => {
+  const source = toMermaid({ kind: 'flowchart', nodes: [{ id: 'a', label: 'fn()', sub: '读锁' }], edges: [] })
+  assert.match(source, /n0\["fn\(\)<br\/>读锁"\]/)
+})
+
+test('a quote becomes an apostrophe instead of a literal entity', () => {
+  const source = toMermaid({ kind: 'flowchart', nodes: [{ id: 'a', label: 'say "hi"' }], edges: [] })
+  assert.match(source, /n0\["say 'hi'"\]/)
+  assert.doesNotMatch(source, /#quot;/)
+})
+
+test('a gantt name cannot truncate itself at a colon', () => {
+  const source = toMermaid({ kind: 'gantt', tasks: [{ name: 'Design: v2', start: '2026-01-01', end: '2026-01-05', section: 'Phase: 1' }] })
+  assert.match(source, /section Phase： 1/)
+  assert.match(source, /Design： v2 :t1, 2026-01-01, 2026-01-05/)
+})

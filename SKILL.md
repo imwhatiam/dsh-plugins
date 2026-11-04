@@ -117,7 +117,7 @@ A single `diagram` node fragment (this is not a complete fence; wrap it in `{"it
 ],"legend":[{"label":"命中路径","tone":"accent"}]}
 ```
 
-`flowchart`, `sequence`, `state`, `er`, `gantt`, and `mindmap` render through a lazy-loaded Mermaid engine; `timeline`, `layers`, `quadrant`, `tree`, `funnel`, `venn`, and `swimlane` are drawn by Mosaic itself. Every diagram card has `svg`, `png`, and `drawio` export buttons in its header.
+`flowchart`, `sequence`, `state`, `er`, `gantt`, and `mindmap` render through a lazy-loaded Mermaid engine; `timeline`, `layers`, `quadrant`, `tree`, `funnel`, `venn`, and `swimlane` are drawn by Mosaic itself. Every diagram card exports `svg` and `png` from its header; `drawio` appears for the kinds it can express as vertices and edges (`flowchart`, `sequence`, `timeline`, `layers`, `state`).
 
 ### Media and links
 
