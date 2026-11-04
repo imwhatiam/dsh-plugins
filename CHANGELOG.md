@@ -4,6 +4,11 @@
 > 兼容性分两处表达：`package.json` 的 `engines.dsh` 给机器可读的范围，README「安装」一节给「插件版本 ↔ 实测 Harness 版本」对照表；每次在真实 Harness 上验证后更新这两处。
 > `0.2.1` 及各 `0.2.1-<标签>` 是改规则前的历史版本，保留用于追溯。
 
+## 1.1.3
+
+- 设置页的导航图标改用插件自己的 mark（内联 SVG，按面板请求的边长渲染），不再和 General 共用同一个齿轮。注册走 `settings.section.icon`：Harness `0.2.1-rc.5` 还没有这个插槽，注册保持静默，升级到声明它的版本后自动生效。
+- 内部：`useDiagramId` 改名 `useInstanceId`，它现在同时给示意图 marker 和图标渐变生成实例 id。
+
 ## 1.1.2
 
 ### 修复
