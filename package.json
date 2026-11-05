@@ -2,8 +2,12 @@
   "name": "dsh-plugins",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*"],
-  "engines": { "node": ">=24" },
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
   "devDependencies": {
     "yaml": "^2.9.0"
   },
@@ -11,6 +15,7 @@
     "test": "node --test tools/compat/*.test.mjs && npm run test --workspaces --if-present",
     "pack:check": "npm run pack:check --workspaces --if-present",
     "check:packages": "node scripts/check-packages.mjs",
-    "compat:table": "node scripts/render-compat-table.mjs"
+    "compat:table": "node scripts/render-compat-table.mjs",
+    "compat:probe": "node tools/compat/probe.mjs"
   }
 }
