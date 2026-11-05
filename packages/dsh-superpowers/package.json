@@ -1,6 +1,7 @@
 {
   "name": "dsh-superpowers",
   "version": "1.0.1",
+  "private": true,
   "description": "Superpowers skills and per-session bootstrap for DeepSeek Harness",
   "type": "module",
   "main": "index.js",
@@ -29,15 +30,12 @@
   "author": "lian <imwhatiam123@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/imwhatiam/dsh-superpowers"
+    "url": "git+https://github.com/imwhatiam/dsh-plugins.git",
+    "directory": "packages/dsh-superpowers"
   },
-  "homepage": "https://github.com/imwhatiam/dsh-superpowers#readme",
+  "homepage": "https://github.com/imwhatiam/dsh-plugins/tree/main/packages/dsh-superpowers#readme",
   "bugs": {
-    "url": "https://github.com/imwhatiam/dsh-superpowers/issues"
-  },
-  "publishConfig": {
-    "access": "public",
-    "tag": "latest"
+    "url": "https://github.com/imwhatiam/dsh-plugins/issues"
   },
   "keywords": [
     "deepseek-harness",
@@ -55,7 +53,8 @@
     "update:check": "node scripts/update-upstream.mjs --check",
     "update": "node scripts/update-upstream.mjs",
     "verify:upstream": "node scripts/verify-upstream.mjs",
-    "prepublishOnly": "npm run sync:check && npm test && npm run verify:upstream"
+    "check:upstream": "npm run sync:check && npm test && npm run verify:upstream",
+    "pack:check": "node ../../scripts/pack-check.mjs"
   },
   "engines": {
     "node": ">=20",

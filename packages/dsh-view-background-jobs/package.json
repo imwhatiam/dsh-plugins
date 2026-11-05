@@ -2,8 +2,24 @@
   "name": "dsh-view-background-jobs",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "Read-only list of running background jobs across the Harness, with workspace and session.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imwhatiam/dsh-plugins.git",
+    "directory": "packages/dsh-view-background-jobs"
+  },
+  "homepage": "https://github.com/imwhatiam/dsh-plugins/tree/main/packages/dsh-view-background-jobs#readme",
+  "bugs": { "url": "https://github.com/imwhatiam/dsh-plugins/issues" },
+  "scripts": {
+    "test": "node --test test/*.test.cjs",
+    "pack:check": "node ../../scripts/pack-check.mjs"
+  },
+  "engines": {
+    "node": ">=24",
+    "dsh": ">=0.2.2-rc.1 <0.3.0-0"
+  },
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",

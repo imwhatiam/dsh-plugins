@@ -15,10 +15,10 @@ its owning workspace and session.
 
 ## Install
 
-From a Harness session with the `plugin_manager` tool:
+This package is local-only. From a Harness session with the `plugin_manager` tool:
 
 ```text
-plugin_manager action=install_bundle target=<absolute path to this directory>
+plugin_manager action=install_bundle target=<absolute path to packages/dsh-view-background-jobs>
 ```
 
 The bundle inserts one row into the active profile:

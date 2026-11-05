@@ -4,13 +4,14 @@
   "type": "module",
   "description": "Lightweight visual answers for DeepSeek Harness: one compact visual style, an editable model prompt, dsh-view components, Mermaid diagrams, a sandboxed HTML/JS escape hatch, local-first interactions, and link-only media cards.",
   "author": "imwhatiam",
-  "homepage": "https://github.com/imwhatiam/dsh-mosaic#readme",
+  "homepage": "https://github.com/imwhatiam/dsh-plugins/tree/main/packages/dsh-mosaic#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/imwhatiam/dsh-mosaic.git"
+    "url": "git+https://github.com/imwhatiam/dsh-plugins.git",
+    "directory": "packages/dsh-mosaic"
   },
   "bugs": {
-    "url": "https://github.com/imwhatiam/dsh-mosaic/issues"
+    "url": "https://github.com/imwhatiam/dsh-plugins/issues"
   },
   "keywords": [
     "deepseek-harness",
@@ -56,7 +57,8 @@
     }
   },
   "scripts": {
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs",
+    "pack:check": "node ../../scripts/pack-check.mjs"
   },
   "engines": {
     "node": ">=24",

@@ -17,7 +17,7 @@ Mosaic 是一个轻量的 DeepSeek Harness 可视化回答插件。它把模型�
 
 实际 DSH Web 页面渲染：
 
-![Mosaic 预览](https://raw.githubusercontent.com/imwhatiam/dsh-mosaic/main/assets/screenshots/preview.jpg)
+![Mosaic 预览](https://raw.githubusercontent.com/imwhatiam/dsh-plugins/main/packages/dsh-mosaic/assets/screenshots/preview.jpg)
 
 ## 两个通道
 

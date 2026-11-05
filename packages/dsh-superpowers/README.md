@@ -14,24 +14,10 @@ Superpowers skills for DeepSeek Harness. The exact upstream version and commit a
 
 ## Install
 
-> **Name note**: `dsh-superpowers` is already taken on npm. After choosing an available name (for example `dsh-superpowers-sync`), replace `<your-package-name>` below. The local development install is unaffected.
-
-### From npm (recommended)
+This package is local-only. Install it from this monorepo:
 
 ```bash
-dsh plugin --profile web add <your-package-name>
-```
-
-### From GitHub release
-
-```bash
-dsh plugin --profile web add github:imwhatiam/dsh-superpowers#v1.0.0
-```
-
-### From local development directory (testing only)
-
-```bash
-dsh plugin --profile superpowers-test add /path/to/dsh-superpowers
+dsh plugin --profile superpowers-test add /path/to/dsh-plugins/packages/dsh-superpowers
 ```
 
 Do not edit a profile's `package.json` or `cordis.patch.yml` by hand—use the `dsh plugin` CLI.
