@@ -1,14 +1,14 @@
-# Publish to npm when a version tag is pushed.
+# Publish dsh-mosaic to npm when a version tag is pushed.
 #
 # Auth is npm trusted publishing (OIDC): no NPM_TOKEN exists anywhere. One-time setup
 # on npmjs.com — package Settings → Trusted Publisher → GitHub Actions, with:
 #   Organization or user: imwhatiam
-#   Repository:           dsh-mosaic
+#   Repository:           dsh-plugins
 #   Workflow filename:    release.yml
 #   Allowed actions:      also allow "npm publish" (stage publish alone cannot publish)
 #
-# The workflow refuses a tag that disagrees with package.json, and refuses a version
-# that is already on the registry, so a re-pushed tag cannot republish.
+# The workflow refuses a tag that disagrees with packages/dsh-mosaic/package.json,
+# and refuses a version that is already on the registry.
 
 name: release
 
@@ -31,13 +31,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # No `cache:` on purpose: this job installs nothing (the package has no
-      # dependencies), so a package-manager cache would only add a lookup and a
-      # stale-cache failure mode.
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
+          cache: npm
 
       # Trusted publishing needs npm >= 11.5.1; fail loudly instead of publishing nothing.
       - name: Check npm CLI supports trusted publishing
@@ -52,23 +50,24 @@ jobs:
             }
           "
 
+      - run: npm ci
       - run: npm test
-      - run: npm pack --dry-run
+      - run: npm run pack:check
 
-      - name: Tag must match package.json
+      - name: Tag must match dsh-mosaic package.json
         run: |
           node -e "
-            const version = require('./package.json').version
+            const version = require('./packages/dsh-mosaic/package.json').version
             const tag = process.env.GITHUB_REF_NAME.replace(/^v/, '')
             if (version !== tag) {
-              console.error('tag ' + tag + ' does not match package.json version ' + version)
+              console.error('tag ' + tag + ' does not match packages/dsh-mosaic/package.json version ' + version)
               process.exit(1)
             }
           "
 
       - name: Refuse an already-published version
         run: |
-          version=$(node -p "require('./package.json').version")
+          version=$(node -p "require('./packages/dsh-mosaic/package.json').version")
           if npm view "dsh-mosaic@$version" version >/dev/null 2>&1; then
             echo "dsh-mosaic@$version is already on the registry"
             exit 1
@@ -79,9 +78,9 @@ jobs:
         id: dist-tag
         run: |
           node -e "
-            const version = require('./package.json').version
+            const version = require('./packages/dsh-mosaic/package.json').version
             require('node:fs').appendFileSync(process.env.GITHUB_OUTPUT, 'name=' + (version.includes('-') ? 'next' : 'latest') + '\n')
           "
 
       - name: Publish
-        run: npm publish --tag "${{ steps.dist-tag.outputs.name }}"
+        run: npm publish --workspace dsh-mosaic --tag "${{ steps.dist-tag.outputs.name }}"

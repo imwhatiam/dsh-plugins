@@ -25,14 +25,14 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: npm test
+      - run: npm test -w dsh-superpowers
       - name: Verify raw upstream parity
-        run: npm run verify:upstream
+        run: npm run verify:upstream -w dsh-superpowers
       - id: check
         shell: bash
         run: |
           set +e
-          npm run update:check
+          npm run update:check -w dsh-superpowers
           code=$?
           if [ "$code" -eq 0 ]; then
             echo "has_update=false" >> "$GITHUB_OUTPUT"
@@ -42,12 +42,12 @@ jobs:
             exit "$code"
           fi
       - if: steps.check.outputs.has_update == 'true'
-        run: npm run update
+        run: npm run update -w dsh-superpowers
       - if: steps.check.outputs.has_update == 'true'
-        run: npm test
+        run: npm test -w dsh-superpowers
       - if: steps.check.outputs.has_update == 'true'
         name: Verify updated raw upstream parity
-        run: npm run verify:upstream
+        run: npm run verify:upstream -w dsh-superpowers
       - if: steps.check.outputs.has_update == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
@@ -59,6 +59,6 @@ jobs:
 
             This PR was created by the weekly `upstream-sync` workflow after a new
             stable upstream tag was detected. It contains the raw upstream `skills/`
-            tree and the updated `UPSTREAM.json`; human review is required before
-            publishing a new plugin release.
+            tree and the updated `UPSTREAM.json`; human review is required before the
+            next desktop check.
           commit-message: 'chore: sync Superpowers upstream'

@@ -1,0 +1,39 @@
+name: DSH release watch
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run compat:watch
+      - if: steps.check.outputs.tag != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = '${{ steps.check.outputs.tag }}'
+            const title = `DSH ${tag} compatibility`
+            const open = await github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, state: 'open' })
+            if (open.data.some((issue) => issue.title === title)) return
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body: `A new DSH release is available: ${tag}.\n\n- [ ] Run \`npm run compat:probe -- --dsh ${tag.replace('dsh-v', '')}\`\n- [ ] Review the DSH diff for the surface in \`tools/compat/surface.json\`\n- [ ] Record the result with \`npm run compat:record\`\n- [ ] Run the desktop check in \`docs/upgrade.md\``,
+            })
