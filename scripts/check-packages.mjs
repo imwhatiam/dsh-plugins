@@ -18,6 +18,8 @@ for (const dir of readdirSync(packagesDir)) {
   require(manifest.scripts?.test, 'missing scripts.test')
   require(manifest.scripts?.['pack:check'], 'missing scripts["pack:check"]')
   require(manifest.repository?.directory === `packages/${dir}`, 'repository.directory mismatch')
+  if (dir === 'dsh-mosaic') require(manifest.private !== true, 'dsh-mosaic must stay publishable')
+  else require(manifest.private === true, 'local-only package must be private')
 }
 
 if (problems.length > 0) {

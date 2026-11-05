@@ -46,15 +46,46 @@ test('surface covers every ctx service, slot, import, and event in package sourc
 
 const CORDIS_METHODS = new Set(['effect', 'inject', 'on', 'dispose', 'get', 'set', 'emit', 'parallel', 'waterfall', 'bail', 'serial'])
 
-test('every ctx service used is declared in surface', () => {
+function discoverSurface(source) {
+  const services = new Set(
+    [...source.matchAll(/ctx\.([A-Za-z_]\w*)/g)]
+      .map((match) => match[1])
+      .filter((service) => !CORDIS_METHODS.has(service)),
+  )
+  const slots = new Set([...source.matchAll(/slots\.(?:register|inject)\(\s*['"]([^'"]+)['"]/g)].map((match) => match[1]))
+  const imports = new Set([...source.matchAll(/(?:from|require\()\s*['"](@deepseek-ai\/[^'"]+)['"]/g)].map((match) => match[1]))
+  const events = new Set([...source.matchAll(/ctx\.on\(\s*['"]([^'"]+)['"]/g)].map((match) => match[1]))
+  return { services, slots, imports, events }
+}
+
+test('discoverSurface finds services, slots, imports, and events', () => {
+  const source = [
+    "import x from '@deepseek-ai/x'",
+    'ctx.foo',
+    "ctx.on('bar')",
+    "ctx.slots.register('baz', {})",
+    "ctx.inject(['qux'])",
+  ].join('\n')
+  const found = discoverSurface(source)
+  assert.deepEqual([...found.services].sort(), ['foo', 'slots'])
+  assert.deepEqual([...found.slots], ['baz'])
+  assert.deepEqual([...found.imports], ['@deepseek-ai/x'])
+  assert.deepEqual([...found.events], ['bar'])
+})
+
+test('every discovered surface item is declared', () => {
   for (const [name, entry] of Object.entries(surface)) {
-    const source = readSources(join(root, 'packages', name))
-    const used = new Set([...source.matchAll(/ctx\.([A-Za-z_]\w*)/g)].map((match) => match[1]))
-    for (const service of used) {
-      if (CORDIS_METHODS.has(service)) continue
-      assert.ok(entry.services.includes(service), `${name}: undeclared service ctx.${service}`)
-    }
+    const found = discoverSurface(readSources(join(root, 'packages', name)))
+    for (const service of found.services) assert.ok(entry.services.includes(service), `${name}: undeclared service ctx.${service}`)
+    for (const slot of found.slots) assert.ok(entry.slots.includes(slot), `${name}: undeclared slot ${slot}`)
+    for (const specifier of found.imports) assert.ok(entry.imports.includes(specifier), `${name}: undeclared import ${specifier}`)
+    for (const event of found.events) assert.ok(entry.events.includes(event), `${name}: undeclared event ${event}`)
   }
+})
+
+test('the verified DSH version has a passing verification record', () => {
+  const record = readFileSync(join(root, 'docs', 'verification', `${compat.dsh}.md`), 'utf8')
+  assert.match(record, /status:\s*passed/)
 })
 
 test('no package test file is gitignored', () => {

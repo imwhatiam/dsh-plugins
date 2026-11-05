@@ -28,6 +28,8 @@ test('the canary is non-blocking and manual', () => {
   const canary = read('.github/workflows/compat-canary.yml')
   assert.ok(canary.on.workflow_dispatch)
   assert.equal(canary.jobs.canary['continue-on-error'], true)
+  assert.equal(canary.permissions.issues, 'write')
+  assert.ok(canary.jobs.canary.steps.some((step) => step.if === 'failure()'))
   assert.match(canary.jobs.canary.steps.map((s) => s.run).filter(Boolean).join('\n'), /compat:probe/)
 })
 

@@ -49,3 +49,17 @@ export function parseWebUrl(stdout) {
   const match = stdout.match(/https?:\/\/127\.0\.0\.1:\d+/)
   return match ? match[0] : null
 }
+
+export function assertWebProfile(manifest) {
+  const bundles = manifest?.dsh?.profile?.bundles ?? []
+  if (!bundles.includes('@deepseek-ai/dsh-web-app')) {
+    throw new Error('probe profile does not include @deepseek-ai/dsh-web-app')
+  }
+}
+
+export function assertRequestedVersion(requested, actual) {
+  if (!/^\d+\.\d+\.\d+/.test(requested)) return
+  if (requested !== actual) {
+    throw new Error(`requested DSH ${requested} but the CLI reports ${actual}`)
+  }
+}

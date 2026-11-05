@@ -11,7 +11,9 @@
     "directory": "packages/dsh-view-background-jobs"
   },
   "homepage": "https://github.com/imwhatiam/dsh-plugins/tree/main/packages/dsh-view-background-jobs#readme",
-  "bugs": { "url": "https://github.com/imwhatiam/dsh-plugins/issues" },
+  "bugs": {
+    "url": "https://github.com/imwhatiam/dsh-plugins/issues"
+  },
   "scripts": {
     "test": "node --test test/*.test.cjs",
     "pack:check": "node ../../scripts/pack-check.mjs"
@@ -32,7 +34,8 @@
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "dsh": {
     "bundle": {

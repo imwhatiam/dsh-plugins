@@ -2,7 +2,7 @@ import { execFileSync, spawn, spawnSync } from 'node:child_process'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { buildProfileManifest, parseDumpConfigRows, assertBundleRows, parseWebUrl } from './probe-lib.mjs'
+import { buildProfileManifest, parseDumpConfigRows, assertBundleRows, parseWebUrl, assertWebProfile, assertRequestedVersion } from './probe-lib.mjs'
 
 const root = fileURLToPath(new URL('../..', import.meta.url))
 const compat = JSON.parse(readFileSync(join(root, 'dsh-compat.json'), 'utf8'))
@@ -40,6 +40,16 @@ function runDsh(extra, env) {
   return result
 }
 
+
+function readDshVersion() {
+  const { command, prefix } = dshCommand()
+  const result = spawnSync(command, [...prefix, '--version'], { encoding: 'utf8', timeout: 120000 })
+  if (result.status !== 0) {
+    throw new Error(`dsh --version failed (${result.status})\n${result.stdout}\n${result.stderr}`)
+  }
+  return result.stdout.trim().split('\n').filter(Boolean).pop().trim()
+}
+
 function placeholderManifest() {
   const template = {
     name: 'dsh-profile-probe',
@@ -61,6 +71,9 @@ const tmp = join(root, '.compat-tmp', `probe-${process.pid}`)
 const home = join(tmp, 'home')
 const profileDir = join(home, 'profiles', 'probe')
 
+const actualVersion = readDshVersion()
+assertRequestedVersion(dshVersion, actualVersion)
+
 function pack(name) {
   const output = execFileSync('npm', ['pack', '--pack-destination', tmp], {
     cwd: join(root, 'packages', name),
@@ -70,12 +83,15 @@ function pack(name) {
   return join(tmp, output.split('\n').pop().trim())
 }
 
+let webChild = null
+
 try {
   mkdirSync(home, { recursive: true })
   runDsh(['--profile', 'probe', '--from-default-profile', 'web', '--dump-config'], { DSH_HOME: home })
 
   const manifestPath = join(profileDir, 'package.json')
   const template = JSON.parse(readFileSync(manifestPath, 'utf8'))
+  assertWebProfile(template)
   const packages = packageNames.map((name) => ({ name, tarball: pack(name) }))
   writeFileSync(manifestPath, `${JSON.stringify(buildProfileManifest(template, packages), null, 2)}\n`)
 
@@ -92,14 +108,14 @@ try {
   ])
 
   const { command, prefix } = dshCommand()
-  const child = spawn(command, [...prefix, '--profile', 'probe', '--port', '0', '--no-open'], {
+  webChild = spawn(command, [...prefix, '--profile', 'probe', '--port', '0', '--no-open'], {
     env: { ...process.env, DSH_HOME: home },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   let stdout = ''
   let stderr = ''
-  child.stdout.on('data', (chunk) => { stdout += chunk })
-  child.stderr.on('data', (chunk) => { stderr += chunk })
+  webChild.stdout.on('data', (chunk) => { stdout += chunk })
+  webChild.stderr.on('data', (chunk) => { stderr += chunk })
 
   const url = await new Promise((resolve, reject) => {
     const deadline = setTimeout(() => {
@@ -113,7 +129,12 @@ try {
         resolve(found)
       }
     }, 100)
-    child.on('exit', (code) => {
+    webChild.on('error', (error) => {
+      clearInterval(poll)
+      clearTimeout(deadline)
+      reject(error)
+    })
+    webChild.on('exit', (code) => {
       if (code !== 0 && !parseWebUrl(stdout)) {
         clearInterval(poll)
         clearTimeout(deadline)
@@ -122,13 +143,26 @@ try {
     })
   })
 
-  child.kill('SIGTERM')
+  webChild.kill('SIGTERM')
 
   if (/(dsh-mosaic|dsh-superpowers|dsh-view-background-jobs)[^\n]*error|error[^\n]*(dsh-mosaic|dsh-superpowers|dsh-view-background-jobs)/i.test(stderr)) {
     throw new Error(`plugin load error\n${stderr}`)
   }
 
-  process.stdout.write(`${JSON.stringify({ ok: true, dsh: dshVersion, profile: profileDir, url })}\n`)
+  process.stdout.write(`${JSON.stringify({ ok: true, dsh: actualVersion, profile: profileDir, url })}\n`)
 } finally {
+  if (webChild && webChild.pid && webChild.exitCode === null) {
+    webChild.kill('SIGTERM')
+    await new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        webChild.kill('SIGKILL')
+        resolve()
+      }, 2000)
+      webChild.once('exit', () => {
+        clearTimeout(timer)
+        resolve()
+      })
+    })
+  }
   if (!keep) rmSync(tmp, { recursive: true, force: true })
 }

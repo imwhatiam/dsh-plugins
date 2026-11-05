@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { buildProfileManifest, parseDumpConfigRows, assertBundleRows, parseWebUrl } from './probe-lib.mjs'
+import { buildProfileManifest, parseDumpConfigRows, assertBundleRows, parseWebUrl, assertWebProfile, assertRequestedVersion } from './probe-lib.mjs'
 
 test('buildProfileManifest adds file dependencies and keeps web bundles', () => {
   const template = {
@@ -50,4 +50,16 @@ test('assertBundleRows reports the missing row', () => {
 test('parseWebUrl finds the loopback URL', () => {
   assert.equal(parseWebUrl('ready at http://127.0.0.1:51234 now'), 'http://127.0.0.1:51234')
   assert.equal(parseWebUrl('no url here'), null)
+})
+
+
+test('assertWebProfile requires the web app bundle', () => {
+  assert.doesNotThrow(() => assertWebProfile({ dsh: { profile: { bundles: ['@deepseek-ai/dsh-web-app'] } } }))
+  assert.throws(() => assertWebProfile({ dsh: { profile: { bundles: ['@deepseek-ai/dsh-base'] } } }), /dsh-web-app/)
+})
+
+test('assertRequestedVersion compares exact versions and ignores dist-tags', () => {
+  assert.doesNotThrow(() => assertRequestedVersion('0.2.2-rc.1', '0.2.2-rc.1'))
+  assert.doesNotThrow(() => assertRequestedVersion('next', '0.2.2-rc.1'))
+  assert.throws(() => assertRequestedVersion('0.2.2-rc.1', '0.2.1-rc.5'), /0\.2\.2-rc\.1/)
 })

@@ -2,6 +2,8 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { assertVerification } from '../tools/compat/record.mjs'
+import { renderTable } from './render-compat-table.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 
@@ -27,6 +29,63 @@ export function ensureChangelogHeader(text, version, date) {
   return [...lines.slice(0, insertAt), '', header, ...lines.slice(insertAt)].join('\n')
 }
 
+export function updateReadmeTable(readme, compat) {
+  const block = `<!-- compat:begin -->\n${renderTable(compat)}\n<!-- compat:end -->`
+  return readme.includes('<!-- compat:begin -->')
+    ? readme.replace(/<!-- compat:begin -->[\s\S]*?<!-- compat:end -->/, block)
+    : `${readme.trimEnd()}\n\n${block}\n`
+}
+
+export function planRelease({ root: repoRoot, packageName, bump }) {
+  const manifestPath = join(repoRoot, 'packages', packageName, 'package.json')
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+  const compatPath = join(repoRoot, 'dsh-compat.json')
+  const compat = JSON.parse(readFileSync(compatPath, 'utf8'))
+  const entry = compat.packages[packageName]
+
+  if (!entry) throw new Error(`dsh-compat.json has no entry for ${packageName}`)
+  if (!compat.dsh) throw new Error('dsh-compat.json has no verified DSH version')
+  if (entry.version !== manifest.version) {
+    throw new Error(`compat version ${entry.version} does not match manifest ${manifest.version}`)
+  }
+
+  const to = bumpVersion(manifest.version, bump)
+  return {
+    from: manifest.version,
+    to,
+    tag: tagFor(packageName, to),
+    manifestPath,
+    compatPath,
+    manifest,
+    compat,
+    entry,
+  }
+}
+
+export function applyRelease({ root: repoRoot, packageName, bump, date }) {
+  const plan = planRelease({ root: repoRoot, packageName, bump })
+  const changelogPath = join(repoRoot, 'packages', packageName, 'CHANGELOG.md')
+  const readmePath = join(repoRoot, 'README.md')
+
+  const nextManifest = { ...plan.manifest, version: plan.to }
+  const nextCompat = {
+    ...plan.compat,
+    packages: { ...plan.compat.packages, [packageName]: { ...plan.entry, version: plan.to } },
+  }
+  const nextChangelog = ensureChangelogHeader(readFileSync(changelogPath, 'utf8'), plan.to, date)
+  const nextReadme = updateReadmeTable(readFileSync(readmePath, 'utf8'), nextCompat)
+
+  const files = [plan.manifestPath, plan.compatPath, changelogPath, readmePath]
+  const previous = new Map(files.map((path) => [path, readFileSync(path, 'utf8')]))
+
+  writeFileSync(plan.manifestPath, `${JSON.stringify(nextManifest, null, 2)}\n`)
+  writeFileSync(plan.compatPath, `${JSON.stringify(nextCompat, null, 2)}\n`)
+  writeFileSync(changelogPath, nextChangelog)
+  writeFileSync(readmePath, nextReadme)
+
+  return { ...plan, files, previous }
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2)
   const packageName = args[0]
@@ -39,55 +98,39 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     process.exit(2)
   }
 
-  const manifestPath = join(root, 'packages', packageName, 'package.json')
-  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
   const compatPath = join(root, 'dsh-compat.json')
   const compat = JSON.parse(readFileSync(compatPath, 'utf8'))
-  const entry = compat.packages[packageName]
+  const verificationPath = join(root, 'docs', 'verification', `${compat.dsh}.md`)
+  assertVerification(readFileSync(verificationPath, 'utf8'), compat.dsh)
 
-  if (!entry) throw new Error(`dsh-compat.json has no entry for ${packageName}`)
-  if (!compat.dsh) throw new Error('dsh-compat.json has no verified DSH version')
-  if (entry.version !== manifest.version) {
-    throw new Error(`compat version ${entry.version} does not match manifest ${manifest.version}`)
-  }
-
-  const nextVersion = bumpVersion(manifest.version, bump)
-  const tag = tagFor(packageName, nextVersion)
   const date = new Date().toLocaleDateString('en-CA')
 
   if (dryRun) {
+    const plan = planRelease({ root, packageName, bump })
     process.stdout.write(`${JSON.stringify({
       package: packageName,
-      from: manifest.version,
-      to: nextVersion,
-      tag,
-      changelog: `## ${nextVersion} — ${date}`,
+      from: plan.from,
+      to: plan.to,
+      tag: plan.tag,
+      changelog: `## ${plan.to} — ${date}`,
     }, null, 2)}\n`)
     process.exit(0)
   }
 
-  writeFileSync(manifestPath, `${JSON.stringify({ ...manifest, version: nextVersion }, null, 2)}\n`)
-  writeFileSync(compatPath, `${JSON.stringify({
-    ...compat,
-    packages: { ...compat.packages, [packageName]: { ...entry, version: nextVersion } },
-  }, null, 2)}\n`)
+  const result = applyRelease({ root, packageName, bump, date })
 
-  const changelogPath = join(root, 'packages', packageName, 'CHANGELOG.md')
-  const changelog = readFileSync(changelogPath, 'utf8')
-  writeFileSync(changelogPath, ensureChangelogHeader(changelog, nextVersion, date))
+  try {
+    execFileSync('npm', ['test'], { cwd: root, stdio: 'inherit' })
+    execFileSync('npm', ['run', 'pack:check'], { cwd: root, stdio: 'inherit' })
+  } catch (error) {
+    for (const [path, content] of result.previous) writeFileSync(path, content)
+    throw error
+  }
 
-  execFileSync('npm', ['test'], { cwd: root, stdio: 'inherit' })
-  execFileSync('npm', ['run', 'pack:check'], { cwd: root, stdio: 'inherit' })
-
-  const files = [
-    manifestPath,
-    compatPath,
-    changelogPath,
-  ]
   const commands = [
-    ['git', ['add', ...files]],
-    ['git', ['commit', '-m', `chore(release): ${packageName} ${nextVersion}`]],
-    ...(tag ? [['git', ['tag', tag]]] : []),
+    ['git', ['add', ...result.files]],
+    ['git', ['commit', '-m', `chore(release): ${packageName} ${result.to}`]],
+    ...(result.tag ? [['git', ['tag', result.tag]]] : []),
   ]
 
   if (commit) {
@@ -100,5 +143,5 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     }
   }
 
-  console.log(`released ${packageName} ${nextVersion}${tag ? ` (${tag})` : ''}`)
+  console.log(`released ${packageName} ${result.to}${result.tag ? ` (${result.tag})` : ''}`)
 }

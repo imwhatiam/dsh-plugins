@@ -5,15 +5,17 @@ const manifest = JSON.parse(readFileSync('package.json', 'utf8'))
 const required = {
   'dsh-mosaic': [
     'package.json', 'cordis.patch.yml', 'README.md', 'LICENSE',
+    'CHANGELOG.md', 'THIRD_PARTY_NOTICES.md',
     'lib/assets/mermaid.min.js', 'screenshots.json', 'assets/screenshots/preview.jpg',
   ],
   'dsh-superpowers': [
     'package.json', 'cordis.patch.yml', 'README.md', 'LICENSE',
+    'CHANGELOG.md', 'THIRD_PARTY_NOTICES.md',
     'index.js', 'UPSTREAM.json', 'skills/brainstorming/SKILL.md',
   ],
   'dsh-view-background-jobs': [
     'package.json', 'cordis.patch.yml', 'README.md', 'LICENSE',
-    'index.js', 'client.js', 'locale/en.json',
+    'CHANGELOG.md', 'index.js', 'client.js', 'locale/en.json',
   ],
 }[manifest.name]
 
