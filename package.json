@@ -8,8 +8,9 @@
     "yaml": "^2.9.0"
   },
   "scripts": {
-    "test": "npm run test --workspaces --if-present",
+    "test": "node --test tools/compat/*.test.mjs && npm run test --workspaces --if-present",
     "pack:check": "npm run pack:check --workspaces --if-present",
-    "check:packages": "node scripts/check-packages.mjs"
+    "check:packages": "node scripts/check-packages.mjs",
+    "compat:table": "node scripts/render-compat-table.mjs"
   }
 }

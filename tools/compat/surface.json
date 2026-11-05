@@ -1,0 +1,24 @@
+{
+  "dsh-mosaic": {
+    "imports": [],
+    "services": ["slots", "sessions", "locale", "systemPrompt", "logger"],
+    "injects": ["tools", "skills", "webServer"],
+    "slots": ["settings.section", "settings.section.icon", "tool.call.toolview"],
+    "tools": ["render_view", "validate_view"],
+    "events": []
+  },
+  "dsh-superpowers": {
+    "imports": ["@deepseek-ai/dsh-llm", "@deepseek-ai/dsh-skill"],
+    "services": ["tools", "skills", "agents", "logger"],
+    "slots": [],
+    "tools": [],
+    "events": ["agent/pre-step"]
+  },
+  "dsh-view-background-jobs": {
+    "imports": [],
+    "services": ["slots", "locale", "jobs", "uiWorkspace", "remote"],
+    "slots": ["sidebar.panellist", "main"],
+    "tools": [],
+    "events": []
+  }
+}

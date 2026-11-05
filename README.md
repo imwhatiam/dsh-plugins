@@ -14,3 +14,11 @@ DeepSeek Harness plugins maintained in one repository.
 npm install
 npm test
 ```
+
+<!-- compat:begin -->
+| Package | Version | Verified DSH | engines.dsh |
+| --- | --- | --- | --- |
+| `dsh-mosaic` | 1.1.4 | 0.2.2-rc.1 | `>=0.2.1-rc.1 <0.3.0-0` |
+| `dsh-superpowers` | 1.0.1 | 0.2.2-rc.1 | `>=0.2.2-rc.1 <0.3.0-0` |
+| `dsh-view-background-jobs` | 0.1.0 | 0.2.2-rc.1 | `>=0.2.2-rc.1 <0.3.0-0` |
+<!-- compat:end -->
