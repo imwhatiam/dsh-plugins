@@ -16,6 +16,8 @@
     "pack:check": "npm run pack:check --workspaces --if-present",
     "check:packages": "node scripts/check-packages.mjs",
     "compat:table": "node scripts/render-compat-table.mjs",
-    "compat:probe": "node tools/compat/probe.mjs"
+    "compat:probe": "node tools/compat/probe.mjs",
+    "compat:watch": "node tools/compat/watch.mjs",
+    "compat:record": "node tools/compat/record.mjs"
   }
 }
