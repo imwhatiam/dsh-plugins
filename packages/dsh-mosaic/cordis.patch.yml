@@ -1,0 +1,10 @@
+# dsh-mosaic bundle patch: insert this package's own row.
+# It touches no other entry, so a user composition decides which plugins run.
+- insert:
+    - id: mosaic
+      name: dsh-mosaic
+      config: {}
+      # Override the contributed model prompt here, e.g.:
+      #   config:
+      #     prompt: 'Only render a dsh-view fence when a table or chart helps.'
+      #      logLevel: debug   # debug | info | warn | error (diagnostic JSONL verbosity)

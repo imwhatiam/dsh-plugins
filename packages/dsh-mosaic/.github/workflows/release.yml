@@ -1,0 +1,87 @@
+# Publish to npm when a version tag is pushed.
+#
+# Auth is npm trusted publishing (OIDC): no NPM_TOKEN exists anywhere. One-time setup
+# on npmjs.com — package Settings → Trusted Publisher → GitHub Actions, with:
+#   Organization or user: imwhatiam
+#   Repository:           dsh-mosaic
+#   Workflow filename:    release.yml
+#   Allowed actions:      also allow "npm publish" (stage publish alone cannot publish)
+#
+# The workflow refuses a tag that disagrees with package.json, and refuses a version
+# that is already on the registry, so a re-pushed tag cannot republish.
+
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # OIDC token for trusted publishing
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # No `cache:` on purpose: this job installs nothing (the package has no
+      # dependencies), so a package-manager cache would only add a lookup and a
+      # stale-cache failure mode.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing needs npm >= 11.5.1; fail loudly instead of publishing nothing.
+      - name: Check npm CLI supports trusted publishing
+        run: |
+          npm --version
+          node -e "
+            const { execSync } = require('node:child_process')
+            const [major, minor] = execSync('npm --version').toString().trim().split('.').map(Number)
+            if (major < 11 || (major === 11 && minor < 5)) {
+              console.error('npm >= 11.5.1 is required for trusted publishing')
+              process.exit(1)
+            }
+          "
+
+      - run: npm test
+      - run: npm pack --dry-run
+
+      - name: Tag must match package.json
+        run: |
+          node -e "
+            const version = require('./package.json').version
+            const tag = process.env.GITHUB_REF_NAME.replace(/^v/, '')
+            if (version !== tag) {
+              console.error('tag ' + tag + ' does not match package.json version ' + version)
+              process.exit(1)
+            }
+          "
+
+      - name: Refuse an already-published version
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if npm view "dsh-mosaic@$version" version >/dev/null 2>&1; then
+            echo "dsh-mosaic@$version is already on the registry"
+            exit 1
+          fi
+
+      # A prerelease version must not take the latest tag; a release version should.
+      - name: Choose dist-tag
+        id: dist-tag
+        run: |
+          node -e "
+            const version = require('./package.json').version
+            require('node:fs').appendFileSync(process.env.GITHUB_OUTPUT, 'name=' + (version.includes('-') ? 'next' : 'latest') + '\n')
+          "
+
+      - name: Publish
+        run: npm publish --tag "${{ steps.dist-tag.outputs.name }}"
