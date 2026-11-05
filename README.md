@@ -10,7 +10,7 @@ Superpowers skills for DeepSeek Harness. The exact upstream version and commit a
 
 ## Versioning
 
-`1.0.0` is the first stable release. The plugin now versions on its own line; the DeepSeek Harness range it was validated against lives in `engines.dsh` (`>=0.2.1-rc.5 <0.3.0-0`) and in the `peerDependencies` on `@deepseek-ai/dsh-llm` and `@deepseek-ai/dsh-skill`. Raise that range when a newer DSH release is validated, and bump the major version only when the plugin's own behaviour changes incompatibly.
+`1.0.0` is the first stable release; `1.0.1` validates the plugin against DeepSeek Harness `0.2.2-rc.1`. The plugin versions on its own line; the validated DeepSeek Harness range lives in `engines.dsh` (`>=0.2.2-rc.1 <0.3.0-0`) and in the `peerDependencies` on `@deepseek-ai/dsh-llm` and `@deepseek-ai/dsh-skill`. Raise that range when a newer DSH release is validated, and bump the major version only when the plugin's own behaviour changes incompatibly.
 
 ## Install
 

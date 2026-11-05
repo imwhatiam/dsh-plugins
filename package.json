@@ -1,6 +1,6 @@
 {
   "name": "dsh-superpowers",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Superpowers skills and per-session bootstrap for DeepSeek Harness",
   "type": "module",
   "main": "index.js",
@@ -59,7 +59,7 @@
   },
   "engines": {
     "node": ">=20",
-    "dsh": ">=0.2.1-rc.5 <0.3.0-0"
+    "dsh": ">=0.2.2-rc.1 <0.3.0-0"
   },
   "dsh": {
     "bundle": {
@@ -67,14 +67,14 @@
     }
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "^4.0.5",
-    "@deepseek-ai/dsh-llm": "^0.2.1-rc.5",
-    "@deepseek-ai/dsh-skill": "^0.2.1-rc.5"
+    "@deepseek-ai/cordis": "^4.1.0",
+    "@deepseek-ai/dsh-llm": "^0.2.2-rc.1",
+    "@deepseek-ai/dsh-skill": "^0.2.2-rc.1"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "^4.0.5",
-    "@deepseek-ai/dsh-llm": "^0.2.1-rc.5",
-    "@deepseek-ai/dsh-skill": "^0.2.1-rc.5"
+    "@deepseek-ai/cordis": "^4.1.0",
+    "@deepseek-ai/dsh-llm": "^0.2.2-rc.1",
+    "@deepseek-ai/dsh-skill": "^0.2.2-rc.1"
   },
   "dependencies": {
     "yaml": "^2.9.0"

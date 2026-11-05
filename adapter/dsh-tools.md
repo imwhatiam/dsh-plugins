@@ -7,7 +7,7 @@ Skills speak in actions ("dispatch a subagent", "create a todo", "read a file").
 | Invoke a skill | `skill` with the exact kebab-case name |
 | Read files | `read` |
 | Create or overwrite files | `write` |
-| Targeted file edits | `edit` |
+| Targeted file edits | `edit`; `apply_patch` when the profile enables it |
 | Search file contents | `grep` |
 | Find files by name or pattern | `glob` |
 | Run a shell command | `bash` |
@@ -26,9 +26,15 @@ Skills speak in actions ("dispatch a subagent", "create a todo", "read a file").
 
 DSH's `subagent` starts an independently managed child and returns its id immediately; the runtime notifies the parent when it finishes. The child reports with `send_message`; the parent continues it with `send_message` and inspects it with `list_agents`. Use `subagent_fork` only when the child should inherit the current conversation, and only if it is visible: it is a second instance of the same subagent plugin, not a variant of `subagent`, so a composition that mounts one need not mount the other. A fresh isolated child is the default for implementers, reviewers, and analysts. Never invent a `Task` or `wait_agent` call: use `subagent`, `send_message`, and `list_agents`.
 
+When a child needs a non-default route, call `list_subagent_models` first to see the allowed provider/model pairs and reasoning efforts; omit the route arguments to inherit the parent or default route.
+
 When a child is running and the parent still has local work, keep working instead of waiting. When the parent is genuinely idle with children outstanding, inspect `list_agents` and continue children with `send_message` as needed.
 
 When delegating a task that may use Superpowers paths, include the DSH path policy in the child prompt: use `.superpowers/` in the current workspace, not `~/.superpowers`, and do not write outside the workspace without explicit human approval. Do not repeat the full `using-superpowers` body for a child agent; pass only the necessary adapter instruction.
+
+## Workflows
+
+For a large fan-out of independent units, the `workflow` tool runs a JavaScript orchestration script across subagents. It takes `script` and `meta`; the script has no filesystem, network, timer, or Node.js APIs, so the subagents do the work. Use `subagent` for one delegation and `workflow` when many independent units need the same pipeline.
 
 ## Task lists
 
@@ -73,3 +79,5 @@ DSH's default file policy is workspace-write. Prefer workspace-local paths for a
 Use only the tools actually visible to the current agent. If the current DSH profile or agent lacks a mapped tool, do not call it; use an available alternative or tell the human what capability is unavailable. The mapping names the intended DSH tool, not a guarantee that every profile mounts it.
 
 Several mapped tools come from separate DSH plugins that a profile or agent preset can drop: `job_list`, `job_output`, and `job_kill` need the jobs plugin, `subagent`, `subagent_fork`, `send_message`, `list_agents`, and `interrupt_agent` need the subagent plugins, and `web_fetch` and `web_search` need the web plugin. When one is missing, run the command in the foreground, do the work yourself, or tell the human what the profile does not provide. Do not claim a background job or a delegated child exists when the tool that reports on it is not mounted.
+
+`apply_patch` is off in the shipped 0.2.2-rc.1 defaults and appears only when a profile sets `applyPatch: true`. `workflow` comes from the base bundle. `list_subagent_models` appears when the preset enables subagent model discovery, as the shipped Web presets do.

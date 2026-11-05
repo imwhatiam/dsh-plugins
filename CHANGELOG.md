@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1] - 2026-11-05
+
+### Changed
+- Raised `engines.dsh` to `>=0.2.2-rc.1 <0.3.0-0` and moved the `@deepseek-ai/cordis`, `@deepseek-ai/dsh-llm`, and `@deepseek-ai/dsh-skill` peer and dev dependencies to the 0.2.2-rc.1 line.
+- Renamed the tool-contract fixture to `dsh-tools.0.2.2.json` and refreshed its source label. The reviewed tool set did not change in 0.2.2-rc.1: `apply_patch` is still off in the shipped defaults, `list_agents` is still registered by `tool-subagent-control`, and the five session tools are unchanged.
+- Documented `apply_patch` (opt-in), `list_subagent_models`, and `workflow` in `adapter/dsh-tools.md`.
+
+### Verified
+- `npm test` passes against `@deepseek-ai/dsh-llm` and `@deepseek-ai/dsh-skill` 0.2.2-rc.1: 41 tests.
+- `npm run sync:check` still matches the pinned upstream tree.
+- A 0.2.2-rc.1 desktop session injected the bootstrap once (`form: 'instructions'`) and served `brainstorming` and `writing-plans` through the `skill` tool with the packaged `resourceBase`.
+
 ## [1.0.0] - 2026-11-02
 
 ### Fixed
