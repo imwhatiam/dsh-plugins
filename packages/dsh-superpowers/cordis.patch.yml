@@ -1,0 +1,4 @@
+- insert:
+    - id: superpowers
+      name: 'dsh-superpowers'
+      config: {}

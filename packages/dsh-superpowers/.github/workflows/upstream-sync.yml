@@ -1,0 +1,64 @@
+name: Sync Superpowers upstream
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  upstream-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - name: Verify raw upstream parity
+        run: npm run verify:upstream
+      - id: check
+        shell: bash
+        run: |
+          set +e
+          npm run update:check
+          code=$?
+          if [ "$code" -eq 0 ]; then
+            echo "has_update=false" >> "$GITHUB_OUTPUT"
+          elif [ "$code" -eq 2 ]; then
+            echo "has_update=true" >> "$GITHUB_OUTPUT"
+          else
+            exit "$code"
+          fi
+      - if: steps.check.outputs.has_update == 'true'
+        run: npm run update
+      - if: steps.check.outputs.has_update == 'true'
+        run: npm test
+      - if: steps.check.outputs.has_update == 'true'
+        name: Verify updated raw upstream parity
+        run: npm run verify:upstream
+      - if: steps.check.outputs.has_update == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: upstream-sync
+          delete-branch: true
+          title: 'Sync Superpowers upstream'
+          body: |
+            Automated upstream sync for `obra/superpowers`.
+
+            This PR was created by the weekly `upstream-sync` workflow after a new
+            stable upstream tag was detected. It contains the raw upstream `skills/`
+            tree and the updated `UPSTREAM.json`; human review is required before
+            publishing a new plugin release.
+          commit-message: 'chore: sync Superpowers upstream'

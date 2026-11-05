@@ -1,0 +1,82 @@
+{
+  "name": "dsh-superpowers",
+  "version": "1.0.1",
+  "description": "Superpowers skills and per-session bootstrap for DeepSeek Harness",
+  "type": "module",
+  "main": "index.js",
+  "icon": "./icon.svg",
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "lib",
+    "adapter",
+    "skills",
+    "locale/*.json",
+    "icon.svg",
+    "cordis.patch.yml",
+    "UPSTREAM.json",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "CHANGELOG.md",
+    "README.md"
+  ],
+  "license": "MIT",
+  "author": "lian <imwhatiam123@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/imwhatiam/dsh-superpowers"
+  },
+  "homepage": "https://github.com/imwhatiam/dsh-superpowers#readme",
+  "bugs": {
+    "url": "https://github.com/imwhatiam/dsh-superpowers/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "latest"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh-plugin",
+    "superpowers",
+    "coding-discipline",
+    "tdd",
+    "brainstorming",
+    "debugging",
+    "verification"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "sync:check": "node scripts/sync-upstream.mjs --check",
+    "update:check": "node scripts/update-upstream.mjs --check",
+    "update": "node scripts/update-upstream.mjs",
+    "verify:upstream": "node scripts/verify-upstream.mjs",
+    "prepublishOnly": "npm run sync:check && npm test && npm run verify:upstream"
+  },
+  "engines": {
+    "node": ">=20",
+    "dsh": ">=0.2.2-rc.1 <0.3.0-0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.1.0",
+    "@deepseek-ai/dsh-llm": "^0.2.2-rc.1",
+    "@deepseek-ai/dsh-skill": "^0.2.2-rc.1"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^4.1.0",
+    "@deepseek-ai/dsh-llm": "^0.2.2-rc.1",
+    "@deepseek-ai/dsh-skill": "^0.2.2-rc.1"
+  },
+  "dependencies": {
+    "yaml": "^2.9.0"
+  }
+}

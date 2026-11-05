@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Package integrity & cache
+.npm/
+.pnpm-store/
+.cache/
+.yarn/
+
+# Build artifacts
+dist/
+build/
+*.tgz
+*.tar.gz
+
+# Test coverage
+coverage/
+target/
+.c8.output.json
+
+# DSH specific
+.superpowers/
+.metrics/
+.dsh-cache/
+
+# Local environment
+.env.local
+.env.development.local
+.env.test.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local sync scratch only; scripts/ and tests/ stay tracked by git
+.patch-*/
+.upstream-tmp/
+tests/sync-temp-*/
+tests/upstream-*/
+
+# Lock files (optional - uncomment if you use them)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+

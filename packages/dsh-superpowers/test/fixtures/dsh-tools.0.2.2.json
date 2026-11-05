@@ -1,0 +1,45 @@
+{
+  "source": "DeepSeek Harness 0.2.2-rc.1 tool contracts",
+  "groups": {
+    "base": "Mounted by the dsh-base bundle every profile composes; an agent preset can still leave one out.",
+    "preset": "Mounted by the shipped standard agent preset, not by dsh-base.",
+    "optional": "Mounted by dsh-base but disabled in the shipped defaults; a profile opts in through the plugin's config.",
+    "optIn": "Mounted only when the profile adds the experimental session-search bundle."
+  },
+  "baseTools": {
+    "skill": { "required": ["name"] },
+    "read": { "required": ["file_path"] },
+    "write": { "required": ["file_path", "content"] },
+    "edit": { "required": ["file_path", "old_string", "new_string"] },
+    "grep": { "required": ["pattern"] },
+    "glob": { "required": ["pattern"] },
+    "bash": { "required": ["command"] },
+    "job_output": { "required": ["job_id"] },
+    "job_kill": { "required": ["job_id"] },
+    "job_list": { "required": [] },
+    "subagent": { "required": ["prompt"] },
+    "subagent_fork": { "required": ["prompt"] },
+    "send_message": { "required": ["agent_id", "message"] },
+    "list_agents": { "required": [] },
+    "interrupt_agent": { "required": ["agent_id"] },
+    "todo_write": { "required": ["todos"] },
+    "web_fetch": { "required": ["url"] },
+    "web_search": { "required": ["queries"] },
+    "workflow": { "required": ["script", "meta"] }
+  },
+  "presetTools": {
+    "ask_user_question": { "required": ["questions"] },
+    "present": { "required": ["files"] },
+    "list_subagent_models": { "required": [] }
+  },
+  "optionalTools": {
+    "apply_patch": { "required": ["input"] }
+  },
+  "optInTools": {
+    "session_search": { "required": ["query"] },
+    "session_event_search": { "required": ["query"] },
+    "session_trace": { "required": [] },
+    "session_event_trace": { "required": ["seq"] },
+    "session_event_read": { "required": ["seq"] }
+  }
+}
