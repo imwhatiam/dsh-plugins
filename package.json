@@ -1,0 +1,13 @@
+{
+  "name": "dsh-plugins",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*"],
+  "engines": { "node": ">=24" },
+  "devDependencies": {
+    "yaml": "^2.9.0"
+  },
+  "scripts": {
+    "test": "npm run test --workspaces --if-present"
+  }
+}
