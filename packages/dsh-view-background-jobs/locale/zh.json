@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "后台任务",
+    "description": "查看所有正在运行的后台任务及其所属 workspace 和 session。"
+  }
+}

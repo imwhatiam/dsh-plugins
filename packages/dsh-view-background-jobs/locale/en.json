@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Background jobs",
+    "description": "Shows every running background job with its workspace and session."
+  }
+}
