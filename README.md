@@ -108,14 +108,14 @@ grep -c '"event":"tool.failed"' "$DSH_HOME"/logs/dsh-mosaic/*.jsonl
 
 ## 已知边界
 
-- 本插件的 npm 版本独立递增（当前 `1.1.3`），不再与 Harness 版本号对齐；兼容范围由 `package.json` 的 `engines.dsh` 声明，最近一次实测的 Harness 版本见「安装」一节。
-- 围栏渲染靠扫描页面里的代码块实现：0.2.1 全系列（实测 rc.3 与 rc.5，master 同样）都没有给插件开放「渲染 fenced code block」的扩展点。工具通道 `render_view` + `tool.call.toolview` 是原生做法，围栏是它的补充。
+- 本插件的 npm 版本独立递增（当前 `1.1.4`），不再与 Harness 版本号对齐；兼容范围由 `package.json` 的 `engines.dsh` 声明，最近一次实测的 Harness 版本见「安装」一节。
+- 围栏渲染靠扫描页面里的代码块实现：0.2.1、0.2.2 全系列（实测 rc.3、rc.5 与 0.2.2-rc.1，master 同样）都没有给插件开放「渲染 fenced code block」的扩展点。工具通道 `render_view` + `tool.call.toolview` 是原生做法，围栏是它的补充。
 - 从 0.2.1 起代码块由 Shiki 渲染，`<code>` 上**没有** `language-*` 类；识别靠「代码块位于 assistant 行内 + 正文能解析成合法视图 spec」这条路径，用户消息、工具结果、推理块里的代码块都被排除。
 - `diagram` 与 `chart` 自带缩放/平移：卡片右上角有 `−`/`+`/`⟲`/`⤢`，放大后按住图面拖动即可平移，`Ctrl/⌘ + 滚轮`缩放，双击复位；示意图按原始尺寸渲染，不会被压缩到卡片宽度。触屏上图表区域只拦横向拖动（`touch-action: pan-y`），手指上下划仍然滚动聊天页面。
 - `widget` 里调用 `window.mosaic.action()` 只有**真实用户手势**之后才会把动作发回模型：Widget 自己也在判断 `navigator.userActivation`，但决定权在宿主——消息的 nonce 就写在 Widget 自己的文档里，模型代码能读出来直接伪造，所以父页面独立再校验一次自己文档的激活状态。确实需要自行提交的 Widget 要在节点上写 `actions: "programmatic"`；无论哪种，整个会话共享「每分钟 10 次、单次 payload 16 KB（按 UTF-8 字节算）」的额度，新开一个 Widget 不会重置。浏览器若不提供 `navigator.userActivation`，非 `programmatic` 的 Widget 会被按「没有手势」处理，按钮不会回模型。
 - `widget` 是 iframe，拿不到宿主的 `ctx.locale`，因此内部文案由调用方自己写；主题靠宿主令牌值传入。围栏是独立的 React root，切换外观不会触发它重渲染，所以 widget 会观察 `body[data-ds-dark-theme]` 这一个外观属性并在变化时重发令牌——这是插件唯一读取的宿主属性。
 - Mermaid 资产走包内私有路由 `/dsh-mosaic/assets`；没有 Web 服务时 diagram 回落到内置 SVG 布局。
-- 设置页的导航图标走 `settings.section.icon` 插槽。Harness `0.2.1-rc.5` 的导航图标是写死的映射，没有这个插槽，Mosaic 会落到默认齿轮；升级到声明该插槽的版本（`0.2.2-alpha.3` 起）后自动显示自己的 mark，插件不用再改。
+- 设置页的导航图标走 `settings.section.icon` 插槽。Harness `0.2.1-rc.5` 的导航图标是写死的映射，没有这个插槽，Mosaic 会落到默认齿轮；`0.2.2` 起声明了该插槽，实测 `0.2.2-rc.1` 已显示 Mosaic 自己的 mark，插件不用再改。
 - 自有路由（`/prompt`、`/log`）先验 **Host 必须是本机权威**（loopback、监听地址，或 `config.trustedHosts` 里声明的），再验 `Sec-Fetch-Site` 与 `Origin`。只比 Origin 和 Host 挡不住 DNS rebinding：被 rebinding 的页面这两者都等于攻击者域名，看起来完全同源。宿主把 Web 服务绑到非 loopback 地址时，请把对应主机名写进 `config.trustedHosts`，否则这些路由会拒绝请求。
 - bundle patch 只插入 Mosaic 自己这一行，不改动任何其他插件。若你还装了别的围栏类插件，两者可以对同一段围栏各显一套，按需在 profile 里关掉其中一个即可。
 - 持久化只用「Host 数据目录里的一个 JSON 文件」，没有走 DSH 的 storageDomain。实测（rc.5）：`storageDomain` 可用，但记录校验只在**重新打开**时执行（`put` 不校验）；`single` 布局遇到版本变化会直接拒绝打开，`compatibleVersions` 也不适用。对一份 Prompt 来说这些能力换不来收益，反而多一个依赖和三条失败分支。
@@ -159,6 +159,7 @@ dsh plugin --profile desktop add link:/absolute/path/to/dsh-mosaic
 
 | 插件版本 | 实测通过的 DeepSeek Harness | 说明 |
 | --- | --- | --- |
+| `1.1.4` | `0.2.2-rc.1` | 修复已完成工具卡片的标题读错参数形状；实测工具、自有路由、Client 插槽与设置页图标均正常 |
 | `1.1.3` | `0.2.1-rc.5` | 设置页改用插件自己的图标；需要 Harness 声明 `settings.section.icon`，rc.5 尚未提供 |
 | `1.1.2` | `0.2.1-rc.5` | 修复示意图标签里的括号/方括号/花括号导致解析失败；补上边与消息的可读预算 |
 | `1.1.1` | `0.2.1-rc.5` | 运行时代码与 `1.1.0` 相同；仅修正发布工作流的无效输入 |

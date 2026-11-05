@@ -4,6 +4,18 @@
 > 兼容性分两处表达：`package.json` 的 `engines.dsh` 给机器可读的范围，README「安装」一节给「插件版本 ↔ 实测 Harness 版本」对照表；每次在真实 Harness 上验证后更新这两处。
 > `0.2.1` 及各 `0.2.1-<标签>` 是改规则前的历史版本，保留用于追溯。
 
+## 1.1.4
+
+### 修复
+
+- `render_view` 与 `validate_view` 的 `presentResult` 把宿主传入的 `ToolResult`（`content`、`isError`、`meta`）当成了工具自己的规范输出值：前者读不到 `title`，已完成卡片永远显示 “Render view”；后者读不到 `status`，永远显示 “Validate dsh-view: invalid”。现在改读 `output.presentationMeta` 落下的 `meta`，`validate_view` 相应补上 `presentationMeta`。
+- 测试按真实契约传 `ToolResult`，并覆盖「只给规范输出值」这条错误形状，避免回归。
+
+### 文档
+
+- 兼容性对照表补上 `0.2.2-rc.1` 实测：工具、自有路由、Client 插槽与设置页图标均正常；`settings.section.icon` 在 `0.2.2` 起真正渲染。
+- 已知边界里的围栏扩展点说明从「0.2.1 全系列」扩到「0.2.1、0.2.2 全系列」。
+
 ## 1.1.3
 
 - 设置页的导航图标改用插件自己的 mark（内联 SVG，按面板请求的边长渲染），不再和 General 共用同一个齿轮。注册走 `settings.section.icon`：Harness `0.2.1-rc.5` 还没有这个插槽，注册保持静默，升级到声明它的版本后自动生效。

@@ -87,10 +87,19 @@ test('presenters are pure, provider-neutral and free of product copy', () => {
     { card: 'generic', title: 'Render view: Ops', kind: 'other' },
   )
   assert.deepEqual(render.presentCall({}), { card: 'generic', title: 'Render view', kind: 'other' })
-  assert.equal(render.presentResult({}, { status: 'rendered', title: 'Ops' }).card, 'generic')
-  assert.match(validate.presentResult({}, { status: 'valid' }).title, /^Validate dsh-view/)
   assert.doesNotMatch(render.presentCall({}).title, /[一-鿿]/)
   assert.doesNotMatch(validate.presentCall().title, /[一-鿿]/)
+})
+
+test('completed cards read the presentation meta a ToolResult carries', () => {
+  // The host hands `presentResult` a ToolResult, never the canonical value.
+  assert.equal(render.presentResult({}, { content: [], isError: false, meta: { title: 'Ops' } }).title, 'Render view: Ops')
+  assert.equal(render.presentResult({}, { content: [], isError: false }).title, 'Render view')
+  assert.equal(render.presentResult({}, { title: 'Ops' }).title, 'Render view')
+  assert.deepEqual(validate.output.presentationMeta({}, { status: 'valid' }), { status: 'valid' })
+  assert.equal(validate.presentResult({}, { content: [], isError: false, meta: { status: 'valid' } }).title, 'Validate dsh-view: valid')
+  assert.equal(validate.presentResult({}, { content: [], isError: false, meta: { status: 'invalid' } }).title, 'Validate dsh-view: invalid')
+  assert.equal(validate.presentResult({}, { content: [], isError: false }).title, 'Validate dsh-view')
 })
 
 test('validate_view reports readable-size warnings for a valid fence', async () => {
