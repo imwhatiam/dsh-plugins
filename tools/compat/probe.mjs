@@ -1,5 +1,5 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { closeSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { buildProfileManifest, parseDumpConfigRows, assertBundleRows, parseWebUrl, assertWebProfile, assertRequestedVersion } from './probe-lib.mjs'
@@ -95,10 +95,21 @@ try {
   const packages = packageNames.map((name) => ({ name, tarball: pack(name) }))
   writeFileSync(manifestPath, `${JSON.stringify(buildProfileManifest(template, packages), null, 2)}\n`)
 
-  execFileSync('npm', ['install', '--prefix', profileDir, '--no-audit', '--no-fund'], {
-    encoding: 'utf8',
-    timeout: 300000,
-  })
+  const installLog = join(tmp, 'npm-install.log')
+  const installFd = openSync(installLog, 'w')
+  try {
+    execFileSync('npm', [
+      'install', '--prefix', profileDir,
+      '--no-audit', '--no-fund', '--omit=peer', '--ignore-scripts',
+    ], {
+      stdio: ['ignore', installFd, installFd],
+      timeout: 300000,
+    })
+  } catch (error) {
+    throw new Error(`npm install failed\n${readFileSync(installLog, 'utf8').slice(-2000)}`)
+  } finally {
+    closeSync(installFd)
+  }
 
   const dump = runDsh(['--profile', 'probe', '--dump-config'], { DSH_HOME: home })
   assertBundleRows(parseDumpConfigRows(dump.stdout), [
