@@ -1,6 +1,6 @@
 {
   "name": "dsh-mosaic",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "type": "module",
   "description": "Lightweight visual answers for DeepSeek Harness: one compact visual style, an editable model prompt, dsh-view components, Mermaid diagrams, a sandboxed HTML/JS escape hatch, local-first interactions, and link-only media cards.",
   "author": "imwhatiam",
