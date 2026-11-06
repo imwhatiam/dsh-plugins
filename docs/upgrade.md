@@ -93,4 +93,4 @@ gh run list --workflow release.yml --limit 1
 
 - probe 失败：先修代码，不要放宽 `engines.dsh`；修好后重跑 probe 和本机检查。
 - 已发布版本有问题：发 patch，不删除 npm 版本。
-- Desktop profile 链接失效：恢复 `~/.dsh/profiles/desktop/package.json.bak`，在 App 插件页按旧路径重新添加。
+- Desktop profile 链接失效：在 App 插件页移除对应插件，再从 `dsh-plugins/packages/<package>` 重新添加。`desktop` profile 由 App 管理，不要直接改 `package.json`，也不要直接跑 `dsh plugin --profile desktop`。

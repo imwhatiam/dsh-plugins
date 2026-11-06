@@ -108,7 +108,7 @@ grep -c '"event":"tool.failed"' "$DSH_HOME"/logs/dsh-mosaic/*.jsonl
 
 ## 已知边界
 
-- 本插件的 npm 版本独立递增（当前 `1.1.4`），不再与 Harness 版本号对齐；兼容范围由 `package.json` 的 `engines.dsh` 声明，最近一次实测的 Harness 版本见「安装」一节。
+- 本插件的 npm 版本独立递增（当前 `1.1.5`），不再与 Harness 版本号对齐；兼容范围由 `package.json` 的 `engines.dsh` 声明，最近一次实测的 Harness 版本见「安装」一节。
 - 围栏渲染靠扫描页面里的代码块实现：0.2.1、0.2.2 全系列（实测 rc.3、rc.5 与 0.2.2-rc.1，master 同样）都没有给插件开放「渲染 fenced code block」的扩展点。工具通道 `render_view` + `tool.call.toolview` 是原生做法，围栏是它的补充。
 - 从 0.2.1 起代码块由 Shiki 渲染，`<code>` 上**没有** `language-*` 类；识别靠「代码块位于 assistant 行内 + 正文能解析成合法视图 spec」这条路径，用户消息、工具结果、推理块里的代码块都被排除。
 - `diagram` 与 `chart` 自带缩放/平移：卡片右上角有 `−`/`+`/`⟲`/`⤢`，放大后按住图面拖动即可平移，`Ctrl/⌘ + 滚轮`缩放，双击复位；示意图按原始尺寸渲染，不会被压缩到卡片宽度。触屏上图表区域只拦横向拖动（`touch-action: pan-y`），手指上下划仍然滚动聊天页面。
@@ -150,7 +150,7 @@ grep -c '"event":"tool.failed"' "$DSH_HOME"/logs/dsh-mosaic/*.jsonl
 dsh plugin --profile web add dsh-mosaic
 
 # 本地开发目录
-dsh plugin --profile desktop add link:/absolute/path/to/dsh-mosaic
+dsh plugin --profile desktop add link:/absolute/path/to/dsh-plugins/packages/dsh-mosaic
 ```
 
 安装后重启或刷新 DSH Web，新会话即可使用。bundle patch 只插入本插件一行，不会关闭或覆盖别人的插件。
@@ -159,6 +159,7 @@ dsh plugin --profile desktop add link:/absolute/path/to/dsh-mosaic
 
 | 插件版本 | 实测通过的 DeepSeek Harness | 说明 |
 | --- | --- | --- |
+| `1.1.5` | `0.2.2-rc.1` | 仓库迁移到 `dsh-plugins` monorepo；运行时代码与 `1.1.4` 相同 |
 | `1.1.4` | `0.2.2-rc.1` | 修复已完成工具卡片的标题读错参数形状；实测工具、自有路由、Client 插槽与设置页图标均正常 |
 | `1.1.3` | `0.2.1-rc.5` | 设置页改用插件自己的图标；需要 Harness 声明 `settings.section.icon`，rc.5 尚未提供 |
 | `1.1.2` | `0.2.1-rc.5` | 修复示意图标签里的括号/方括号/花括号导致解析失败；补上边与消息的可读预算 |

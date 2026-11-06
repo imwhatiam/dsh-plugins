@@ -17,7 +17,7 @@ Superpowers skills for DeepSeek Harness. The exact upstream version and commit a
 This package is local-only. Install it from this monorepo:
 
 ```bash
-dsh plugin --profile superpowers-test add /path/to/dsh-plugins/packages/dsh-superpowers
+dsh plugin --profile <name> add link:/path/to/dsh-plugins/packages/dsh-superpowers
 ```
 
 Do not edit a profile's `package.json` or `cordis.patch.yml` by hand—use the `dsh plugin` CLI.
@@ -39,11 +39,9 @@ If GitHub is only reachable through the local SOCKS tunnel, prefix the commands 
 
 After a successful update:
 
-1. Bump `version` in `package.json`
-2. Add entry to `CHANGELOG.md`
-3. Tag and release: `git tag v0.2.2 && git push origin v0.2.2`
-4. Update npm: `npm publish --access public`
-5. Restart the DSH profile to reload the linked package
+1. Bump `version` in `packages/dsh-superpowers/package.json`
+2. Add an entry to `packages/dsh-superpowers/CHANGELOG.md`
+3. Restart the DSH profile to reload the linked package
 
 The repository includes `.github/workflows/upstream-sync.yml`: it runs weekly, checks for a new stable tag, verifies raw upstream parity, runs the full test suite, and opens a PR. It never publishes npm automatically.
 
@@ -63,11 +61,11 @@ The repository includes `.github/workflows/upstream-sync.yml`: it runs weekly, c
 
 ## Checks
 
-- `npm test` — 41 tests.
+- `npm test` — 49 tests.
 - `npm run sync:check` — the vendored tree matches `UPSTREAM.json`.
 - `npm run verify:upstream` — byte-for-byte parity with the pinned upstream tag.
 
-CI runs all three on every push and pull request. Nothing here publishes to npm; the plugin is installed from a local path or a GitHub tag.
+CI runs all three on every push and pull request. Nothing here publishes to npm; the plugin is installed from `packages/dsh-superpowers` in this monorepo.
 
 ## DSH specifics
 

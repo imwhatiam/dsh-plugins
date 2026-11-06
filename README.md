@@ -1,6 +1,6 @@
 # dsh-plugins
 
-DeepSeek Harness plugins maintained in one repository.
+DeepSeek Harness plugins maintained in one repository. The former standalone repositories were removed; this repository is the source of truth.
 
 | Package | What it does | Distribution |
 | --- | --- | --- |
@@ -13,7 +13,11 @@ DeepSeek Harness plugins maintained in one repository.
 ```sh
 npm install
 npm test
+npm run pack:check
+npm run compat:probe
 ```
+
+See [`docs/upgrade.md`](docs/upgrade.md) for the DSH upgrade and release playbook.
 
 <!-- compat:begin -->
 | Package | Version | Verified DSH | engines.dsh |

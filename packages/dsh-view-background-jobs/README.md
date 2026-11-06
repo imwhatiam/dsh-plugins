@@ -42,7 +42,7 @@ The bundle inserts one row into the active profile:
 ## Verify
 
 1. `node --check client.js`
-2. `node --test tests/client.test.cjs`
+2. `node --test test/*.test.cjs`
 3. Install, then confirm the `sidebar.panellist` and `main` occupants with
    `cordis_inspect_query` (`Slots.listSubTree`).
 4. Open the panel, start a `sleep 300` background job in a session, and confirm
