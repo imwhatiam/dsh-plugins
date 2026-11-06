@@ -15,6 +15,7 @@ test('ci runs tests, pack checks, and the probe', () => {
   assert.match(run, /npm ci/)
   assert.match(run, /npm test/)
   assert.match(run, /npm run pack:check/)
+  assert.match(run, /npm i -g "@deepseek-ai\/dsh@/)
   assert.match(run, /npm run compat:probe/)
 })
 

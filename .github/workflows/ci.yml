@@ -20,4 +20,6 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run pack:check
+      - name: Install DSH CLI
+        run: npm i -g "@deepseek-ai/dsh@$(node -p "require('./dsh-compat.json').dsh")"
       - run: npm run compat:probe
